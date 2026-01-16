@@ -1,5 +1,8 @@
-package com.example.examplemod;
+package com.leetftw.complexpipes.client;
 
+import com.leetftw.complexpipes.client.gui.PipeConnectionScreen;
+import com.leetftw.complexpipes.common.PipeMod;
+import com.leetftw.complexpipes.common.gui.MenuRegistry;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -7,13 +10,14 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
 // This class will not load on dedicated servers. Accessing client side code from here is safe.
-@Mod(value = ExampleMod.MODID, dist = Dist.CLIENT)
+@Mod(value = PipeMod.MODID, dist = Dist.CLIENT)
 // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
-@EventBusSubscriber(modid = ExampleMod.MODID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = PipeMod.MODID, value = Dist.CLIENT)
 public class ExampleModClient {
     public ExampleModClient(ModContainer container) {
         // Allows NeoForge to create a config screen for this mod's configs.
@@ -25,7 +29,12 @@ public class ExampleModClient {
     @SubscribeEvent
     static void onClientSetup(FMLClientSetupEvent event) {
         // Some client setup code
-        ExampleMod.LOGGER.info("HELLO FROM CLIENT SETUP");
-        ExampleMod.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
+        PipeMod.LOGGER.info("HELLO FROM CLIENT SETUP");
+        PipeMod.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
+    }
+
+    @SubscribeEvent
+    public static void registerScreens(RegisterMenuScreensEvent event) {
+        event.register(MenuRegistry.PIPE_CONNECTION_MENU.get(), PipeConnectionScreen::new);
     }
 }

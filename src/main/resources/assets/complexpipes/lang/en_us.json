@@ -1,0 +1,13 @@
+{
+  "itemGroup.complexpipes": "Example Mod Tab",
+  "block.complexpipes.example_block": "Example Block",
+  "item.complexpipes.example_item": "Example Item",
+
+  "complexpipes.configuration.title": "Example Mod Configs",
+  "complexpipes.configuration.section.complexpipes.common.toml": "Example Mod Configs",
+  "complexpipes.configuration.section.complexpipes.common.toml.title": "Example Mod Configs",
+  "complexpipes.configuration.items": "Item List",
+  "complexpipes.configuration.logDirtBlock": "Log Dirt Block",
+  "complexpipes.configuration.magicNumberIntroduction": "Magic Number Text",
+  "complexpipes.configuration.magicNumber": "Magic Number"
+}
