@@ -9,8 +9,9 @@ public class EnergyPipeUpgrade extends PipeUpgrade {
     public static final EnergyPipeUpgrade INSTANCE = new EnergyPipeUpgrade();
     public static final MapCodec<EnergyPipeUpgrade> CODEC = MapCodec.unit(INSTANCE);
 
-    protected EnergyPipeUpgrade() {
-        super(BuiltinPipeUpgrades.ENERGY_UPGRADE);
+    @Override
+    public PipeUpgradeType getType() {
+        return BuiltinPipeUpgrades.ENERGY_UPGRADE;
     }
 
     @Override

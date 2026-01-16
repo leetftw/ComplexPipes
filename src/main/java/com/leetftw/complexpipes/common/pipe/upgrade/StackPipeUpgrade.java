@@ -9,8 +9,9 @@ public class StackPipeUpgrade extends PipeUpgrade {
     public static final StackPipeUpgrade INSTANCE = new StackPipeUpgrade();
     public static final MapCodec<StackPipeUpgrade> CODEC = MapCodec.unit(INSTANCE);
 
-    protected StackPipeUpgrade() {
-        super(BuiltinPipeUpgrades.STACK_UPGRADE);
+    @Override
+    public PipeUpgradeType getType() {
+        return BuiltinPipeUpgrades.STACK_UPGRADE;
     }
 
     @Override

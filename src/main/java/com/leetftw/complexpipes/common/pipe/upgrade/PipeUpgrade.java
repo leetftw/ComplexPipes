@@ -31,15 +31,7 @@ public abstract class PipeUpgrade {
             // but our ThingType is already a MapCodec, so we can just do this
             Function.identity());
 
-    private final PipeUpgradeType TYPE;
-
-    protected PipeUpgrade(PipeUpgradeType type) {
-        TYPE = type;
-    }
-
-    public PipeUpgradeType getType() {
-        return TYPE;
-    }
+    public abstract PipeUpgradeType getType();
 
     public abstract int getMinTransferAmount();
     public abstract int getMaxTransferAmount();

@@ -9,8 +9,9 @@ public class SpeedPipeUpgrade extends PipeUpgrade {
     public static final SpeedPipeUpgrade INSTANCE = new SpeedPipeUpgrade();
     public static final MapCodec<SpeedPipeUpgrade> CODEC = MapCodec.unit(INSTANCE);
 
-    protected SpeedPipeUpgrade() {
-        super(BuiltinPipeUpgrades.SPEED_UPGRADE);
+    @Override
+    public PipeUpgradeType getType() {
+        return BuiltinPipeUpgrades.SPEED_UPGRADE;
     }
 
     @Override
