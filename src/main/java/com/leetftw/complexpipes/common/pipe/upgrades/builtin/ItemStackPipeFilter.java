@@ -85,12 +85,20 @@ public class ItemStackPipeFilter extends PipeUpgrade {
     }
 
     @Override
-    public Predicate<Object> getFilter() {
-        if (predicate == null)
-            predicate = a ->
-                    !(a instanceof ItemResource resource)
-                            || Arrays.stream(items).anyMatch(resource::equals);
-        return predicate;
+    public boolean isFilter() {
+        return true;
+    }
+
+    @Override
+    public boolean allowResourceTransfer(Object object) {
+        if (!(object instanceof ItemResource resource))
+            return false;
+
+        for (ItemResource item : items)
+            if (resource.equals(item))
+                return mode == PipeFilterMode.WHITELIST;
+
+        return mode != PipeFilterMode.WHITELIST;
     }
 
     @Override

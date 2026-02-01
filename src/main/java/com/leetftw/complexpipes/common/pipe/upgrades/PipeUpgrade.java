@@ -35,11 +35,18 @@ public abstract class PipeUpgrade {
 
     public abstract int getMinTransferAmount();
     public abstract int getMaxTransferAmount();
+
     public abstract double getTransferIntervalMultiplier();
     public abstract double getTransferAmountMultiplier();
-    public abstract Predicate<Object> getFilter();
-    public abstract int getMaxInstalledCount();
 
+    public boolean isFilter() {
+        return false;
+    }
+    public boolean allowResourceTransfer(Object object) {
+        return true;
+    }
+
+    public abstract int getMaxInstalledCount();
     public abstract MapCodec<? extends PipeUpgrade> codec();
 
     @Override

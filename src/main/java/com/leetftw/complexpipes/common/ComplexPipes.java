@@ -6,7 +6,9 @@ import com.leetftw.complexpipes.common.items.creative.CreativeModeTabRegistry;
 import com.leetftw.complexpipes.common.network.PipeSyncPayload;
 import com.leetftw.complexpipes.common.pipe.types.PipeTypeRegistry;
 import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgradeRegistry;
+import com.leetftw.complexpipes.common.tests.GameRuleRegistry;
 import com.leetftw.complexpipes.common.tests.GameTestRegistry;
+import net.minecraft.world.level.gamerules.GameRule;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import org.slf4j.Logger;
@@ -41,6 +43,7 @@ public class ComplexPipes {
         PipeTypeRegistry.register(modEventBus);
         PipeUpgradeRegistry.register(modEventBus);
 
+        GameRuleRegistry.GAME_RULE_REGISTRY.register(modEventBus);
         GameTestRegistry.TEST_FUNCTION_REGISTRY.register(modEventBus);
 
         modEventBus.addListener(ComplexPipes::registerPayloads);

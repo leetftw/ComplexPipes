@@ -38,11 +38,6 @@ public class StackPipeUpgrade extends PipeUpgrade {
     }
 
     @Override
-    public Predicate<Object> getFilter() {
-        return a -> true;
-    }
-
-    @Override
     public int getMaxInstalledCount() {
         return 6;
 

@@ -5,6 +5,7 @@ import com.leetftw.complexpipes.common.items.ItemRegistry;
 import com.leetftw.complexpipes.common.pipe.types.PipeType;
 import com.leetftw.complexpipes.common.pipe.types.PipeTypeRegistry;
 import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgrade;
+import com.leetftw.complexpipes.common.tests.GameRuleRegistry;
 import com.leetftw.complexpipes.common.util.routing.BaseRoutingStrategy;
 import com.leetftw.complexpipes.common.util.routing.DefaultRoutingStrategy;
 import com.mojang.datafixers.util.Pair;
@@ -46,7 +47,7 @@ public class PipeConnection {
             ).apply(instance, PipeConnection::new)
     );
 
-    private final BlockPos pipePos;
+    private BlockPos pipePos;
     private final Direction side;
 
     private PipeConnectionMode mode = PipeConnectionMode.PASSIVE;
@@ -56,6 +57,8 @@ public class PipeConnection {
     private final PipeUpgrade[] pipeUpgrades = new PipeUpgrade[MAX_UPGRADES];
     private int tickCount = 0;
     private final PipeType<?> TYPE;
+
+    private Predicate<Object> predicate;
 
     private boolean dirty = false;
 
@@ -81,6 +84,11 @@ public class PipeConnection {
 
     public BlockPos getPipePos() {
         return pipePos;
+    }
+
+    public PipeConnection overwritePipePos(BlockPos newPos) {
+        this.pipePos = newPos;
+        return this;
     }
 
     public Direction getSide() {
@@ -238,6 +246,21 @@ public class PipeConnection {
         }
     }
 
+    public Predicate<Object> computePredicate() {
+        if (predicate == null) {
+            predicate = object -> {
+                for (PipeUpgrade upgrade : pipeUpgrades) {
+                    if (upgrade == null)
+                        continue;
+                    if (upgrade.isFilter() && !upgrade.allowResourceTransfer(object))
+                        return false;
+                }
+                return true;
+            };
+        }
+        return predicate;
+    }
+
     public <T> void tick(ServerLevel level, BlockPos pos, PipeNetworkView networkView, PipeType<T> type) {
         long operationTime = calculateOperationTime(); // 1 operation per second
 
@@ -286,7 +309,9 @@ public class PipeConnection {
         Arrays.sort(priorities);
 
         // Compute base filter
-        Predicate<Object> baseFilter = Arrays.stream(pipeUpgrades).filter(Objects::nonNull).map(PipeUpgrade::getFilter).reduce(a -> true, Predicate::and);
+        boolean useFilters = !level.getGameRules().get(GameRuleRegistry.NO_PIPE_FILTER.get());
+        Predicate<Object> alwaysTrue = a -> true;
+        Predicate<Object> baseFilter = useFilters ? computePredicate() : alwaysTrue;
 
         // Iterate from highest to lowest priority
         int totalTransferred = 0;
@@ -299,7 +324,7 @@ public class PipeConnection {
             // Get the handlers and the filters for the pipe connections
             for (Tuple<PipeConnection, T> tuple : targets) {
                 targetHandlers.add(tuple.getB());
-                Predicate<Object> targetFilter = Arrays.stream(tuple.getA().pipeUpgrades).filter(Objects::nonNull).map(PipeUpgrade::getFilter).reduce(a -> true, Predicate::and);
+                Predicate<Object> targetFilter = useFilters ? tuple.getA().computePredicate() : alwaysTrue;
                 targetFilters.add(targetFilter);
             }
 

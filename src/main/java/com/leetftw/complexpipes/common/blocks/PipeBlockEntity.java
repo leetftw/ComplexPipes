@@ -110,6 +110,9 @@ public class PipeBlockEntity extends BlockEntity {
                 }
             }
         }
+
+        for (PipeConnection ownedConnection : ownedConnections.values())
+            ownedConnection.overwritePipePos(pos);
     }
 
     @Override
