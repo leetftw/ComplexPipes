@@ -1,9 +1,23 @@
 {
-  "itemGroup.complexpipes": "Example Mod Tab",
+  "itemGroup.complexpipes": "Complex Pipes",
   "block.complexpipes.example_block": "Example Block",
   "item.complexpipes.example_item": "Example Item",
 
-  "complexpipes.configuration.title": "Example Mod Configs",
+  "item.complexpipes.extraction_card": "Extraction Card",
+  "item.complexpipes.insertion_card": "Insertion Card",
+  "item.complexpipes.round_robin_card": "Round Robin Card",
+
+  "block.complexpipes.item_pipe": "Item Pipe",
+  "block.complexpipes.fluid_pipe": "Fluid Pipe",
+  "block.complexpipes.energy_pipe": "Energy Pipe",
+
+  "item.complexpipes.speed_upgrade": "Speed Upgrade",
+  "item.complexpipes.stack_upgrade": "Stack Upgrade",
+  "item.complexpipes.energy_upgrade": "Energy Upgrade",
+
+  "item.complexpipes.item_stack_filter": "Item Filter",
+
+  "complexpipes.configuration.title": "Complex Pipes Configuration",
   "complexpipes.configuration.section.complexpipes.common.toml": "Example Mod Configs",
   "complexpipes.configuration.section.complexpipes.common.toml.title": "Example Mod Configs",
   "complexpipes.configuration.items": "Item List",

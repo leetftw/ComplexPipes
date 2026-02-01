@@ -2,7 +2,7 @@ package com.leetftw.complexpipes.common.pipe.types;
 
 import com.leetftw.complexpipes.common.blocks.PipeBlock;
 import com.leetftw.complexpipes.common.blocks.PipeBlockEntity;
-import com.leetftw.complexpipes.common.pipe.upgrade.PipeUpgradeType;
+import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgradeType;
 import com.leetftw.complexpipes.common.util.PipeHandlerWrapper;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;

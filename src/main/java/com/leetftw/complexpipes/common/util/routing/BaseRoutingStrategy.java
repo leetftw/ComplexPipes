@@ -25,7 +25,7 @@ public abstract class BaseRoutingStrategy {
         }
     }
 
-    protected abstract <T> void route(
+    protected abstract <T> int route(
             PipeHandlerWrapper<T> handlerWrapper,
             Transaction transaction,
             T base,
@@ -36,7 +36,7 @@ public abstract class BaseRoutingStrategy {
             int maxTransfer,
             Function<Transfer<T>, Integer> transferFunction);
 
-    public final <T> void routeExtract(
+    public final <T> int routeExtract(
             PipeHandlerWrapper<T> handlerWrapper,
             Transaction transaction,
             T base,
@@ -45,10 +45,10 @@ public abstract class BaseRoutingStrategy {
             List<Predicate<Object>> targetFilters,
             int minTransfer,
             int maxTransfer) {
-        route(handlerWrapper, transaction, base, baseFilter, targets, targetFilters, minTransfer, maxTransfer, Transfer::performExtract);
+        return route(handlerWrapper, transaction, base, baseFilter, targets, targetFilters, minTransfer, maxTransfer, Transfer::performExtract);
     }
 
-    public final <T> void routeInsert(
+    public final <T> int routeInsert(
             PipeHandlerWrapper<T> handlerWrapper,
             Transaction transaction,
             T base,
@@ -57,13 +57,15 @@ public abstract class BaseRoutingStrategy {
             List<Predicate<Object>> targetFilters,
             int minTransfer,
             int maxTransfer) {
-        route(handlerWrapper, transaction, base, baseFilter, targets, targetFilters, minTransfer, maxTransfer, Transfer::performInsert);
+        return route(handlerWrapper, transaction, base, baseFilter, targets, targetFilters, minTransfer, maxTransfer, Transfer::performInsert);
     }
 
     public abstract String getId();
 
     public static BaseRoutingStrategy create(String id) {
         switch (id) {
+            case "round_robin":
+                return new RoundRobinRoutingStrategy();
             case "default":
             default:
                 return new DefaultRoutingStrategy();

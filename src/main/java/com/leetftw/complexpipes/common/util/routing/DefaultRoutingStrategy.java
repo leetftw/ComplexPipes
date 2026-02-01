@@ -12,10 +12,10 @@ import java.util.function.Predicate;
 public class DefaultRoutingStrategy extends BaseRoutingStrategy {
 
     @Override
-    protected <T> void route(PipeHandlerWrapper<T> handlerWrapper, Transaction transaction, T base, Predicate<Object> baseFilter, List<T> targets, List<Predicate<Object>> targetFilters, int minTransfer, int maxTransfer, Function<Transfer<T>, Integer> transferFunction) {
+    protected <T> int route(PipeHandlerWrapper<T> handlerWrapper, Transaction transaction, T base, Predicate<Object> baseFilter, List<T> targets, List<Predicate<Object>> targetFilters, int minTransfer, int maxTransfer, Function<Transfer<T>, Integer> transferFunction) {
         if (maxTransfer <= 0 || targets.isEmpty()) {
             transaction.close();
-            return;
+            return 0;
         }
 
         int amountTransferred = 0;
@@ -35,10 +35,14 @@ public class DefaultRoutingStrategy extends BaseRoutingStrategy {
         }
 
         assert amountTransferred <= maxTransfer;
-        if (amountTransferred >= minTransfer)
+        if (amountTransferred >= minTransfer) {
             transaction.commit();
+            transaction.close();
+            return amountTransferred;
+        }
 
         transaction.close();
+        return 0;
     }
 
     @Override

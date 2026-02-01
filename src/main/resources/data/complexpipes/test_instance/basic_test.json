@@ -1,0 +1,13 @@
+{
+  "environment": "minecraft:default",
+  "structure": "complexpipes:basic_test",
+  "max_ticks": 100,
+  "setup_ticks": 0,
+  "required": false,
+  "rotation": "none",
+  "manual_only": true,
+  "sky_access": false,
+  "max_attempts": 1,
+  "required_successes": 1,
+  "type": "block_based"
+}

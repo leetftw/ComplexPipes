@@ -1,8 +1,11 @@
 package com.leetftw.complexpipes.common.pipe.network;
 
-import com.leetftw.complexpipes.common.PipeMod;
+import com.leetftw.complexpipes.common.ComplexPipes;
+import com.leetftw.complexpipes.common.items.ItemComponentRegistry;
+import com.leetftw.complexpipes.common.items.ItemRegistry;
 import com.leetftw.complexpipes.common.pipe.types.PipeType;
-import com.leetftw.complexpipes.common.pipe.upgrade.PipeUpgrade;
+import com.leetftw.complexpipes.common.pipe.types.PipeTypeRegistry;
+import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgrade;
 import com.leetftw.complexpipes.common.util.routing.BaseRoutingStrategy;
 import com.leetftw.complexpipes.common.util.routing.DefaultRoutingStrategy;
 import com.mojang.datafixers.util.Pair;
@@ -10,19 +13,26 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Tuple;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.leetftw.complexpipes.common.ComplexPipes.LOGGER;
 
 public class PipeConnection {
     public static final int MAX_UPGRADES = 6;
 
     public static final Codec<PipeConnection> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
+                    Codec.STRING.fieldOf("type").forGetter(a -> a.TYPE.getRegisteredId()),
                     BlockPos.CODEC.fieldOf("position").forGetter(PipeConnection::getPipePos),
                     Direction.CODEC.fieldOf("direction").forGetter(PipeConnection::getSide),
                     Codec.STRING.fieldOf("mode").forGetter(a -> a.getMode().name()),
@@ -49,15 +59,17 @@ public class PipeConnection {
     private BaseRoutingStrategy routingStrategy = new DefaultRoutingStrategy();
     private final PipeUpgrade[] pipeUpgrades = new PipeUpgrade[MAX_UPGRADES];
     private int tickCount = 0;
+    private final PipeType<?> TYPE;
 
     private boolean dirty = false;
 
-    public PipeConnection(BlockPos pos, Direction side) {
+    public PipeConnection(PipeType<?> type, BlockPos pos, Direction side) {
         this.pipePos = pos;
         this.side = side;
+        this.TYPE = type;
     }
 
-    private PipeConnection(BlockPos pos, Direction side, String mode, int priority, int ratio, String routingStrategy, int tickCount, List<Pair<Integer, PipeUpgrade>> upgrades) {
+    private PipeConnection(String type, BlockPos pos, Direction side, String mode, int priority, int ratio, String routingStrategy, int tickCount, List<Pair<Integer, PipeUpgrade>> upgrades) {
         this.pipePos = pos;
         this.side = side;
         this.mode = PipeConnectionMode.valueOf(mode);
@@ -68,6 +80,7 @@ public class PipeConnection {
         for (Pair<Integer, PipeUpgrade> storedUpgrade : upgrades)
             this.pipeUpgrades[storedUpgrade.getFirst()] = storedUpgrade.getSecond();
         this.dirty = true;
+        this.TYPE = PipeTypeRegistry.getType(type);
     }
 
     public BlockPos getPipePos() {
@@ -140,12 +153,16 @@ public class PipeConnection {
 
     public boolean tryAddUpgrade(PipeUpgrade upgrade) {
         // Max 6 upgrades
-        if (Arrays.stream(pipeUpgrades).filter(Objects::nonNull).count() == MAX_UPGRADES) return false;
+        if (Arrays.stream(pipeUpgrades).filter(Objects::nonNull).count() == MAX_UPGRADES)
+            return false;
         // Adding this upgrade should not exceed max upgrades for this type
         if (upgrade.getMaxInstalledCount() == Arrays.stream(pipeUpgrades).filter(Objects::nonNull)
-                .filter(existingUpgrade -> existingUpgrade.getType() == upgrade.getType()).count()) return false;
+                .filter(existingUpgrade -> existingUpgrade.getType() == upgrade.getType()).count())
+            return false;
+        // The upgrade should be supported by the pipe
+        if (!TYPE.supportsUpgrade(upgrade.getType()))
+            return false;
 
-        // TODO: add compatibility check
         int firstEmptyIndex = -1;
         for (int i = 0; i < MAX_UPGRADES; i++) {
             if (pipeUpgrades[i] == null) {
@@ -165,72 +182,150 @@ public class PipeConnection {
     }
 
     private void setDirty() {
-        PipeMod.LOGGER.info("[PipeConnection] Dirty set to TRUE");
+        LOGGER.info("[PipeConnection] Dirty set to TRUE");
         dirty = true;
     }
 
     public void clearDirty() {
-        PipeMod.LOGGER.info("[PipeConnection] Dirty set to FALSE");
+        LOGGER.info("[PipeConnection] Dirty set to FALSE");
         dirty = false;
     }
 
-    public int calculateTransferRate(PipeType<?> type) {
+    public int calculateTransferRate() {
         return Arrays.stream(pipeUpgrades).filter(Objects::nonNull)
                 .map(PipeUpgrade::getTransferAmountMultiplier)
-                .reduce((double) type.getDefaultTransferAmount(), (a, b) -> a * b)
+                .reduce((double) TYPE.getDefaultTransferAmount(), (a, b) -> a * b)
                 .intValue();
     }
 
-    public long calculateOperationTime(PipeType<?> type) {
+    public long calculateOperationTime() {
         return Long.max(1, Math.round(Arrays.stream(pipeUpgrades).filter(Objects::nonNull)
                 .map(PipeUpgrade::getTransferIntervalMultiplier)
-                .reduce((double) type.getDefaultTransferSpeed(), (a, b) -> a * b)));
+                .reduce((double) TYPE.getDefaultTransferSpeed(), (a, b) -> a * b)));
     }
 
-    public double calculateResourcesPerTick(PipeType<?> type) {
-        return (double) calculateTransferRate(type) / (double) calculateOperationTime(type);
+    public double calculateResourcesPerTick() {
+        return (double) calculateTransferRate() / (double) calculateOperationTime();
     }
 
-    public <T> void tick(Level level, BlockPos pos, PipeNetworkView networkView, PipeType<T> type) {
-        long operationTime = calculateOperationTime(type); // 1 operation per second
+    public void appendItems(List<ItemStack> items) {
+        for (PipeUpgrade upgrade : pipeUpgrades) {
+            if (upgrade == null) continue;
+
+            ItemStack stack = new ItemStack(upgrade.getType().getItem(), 1);
+            stack.set(ItemComponentRegistry.PIPE_UPGRADE, upgrade);
+            items.add(stack);
+        }
+
+        switch (mode) {
+            case PipeConnectionMode.EXTRACT:
+                ItemStack extractionCard = new ItemStack(ItemRegistry.EXTRACTION_CARD.get(), 1);
+                items.add(extractionCard);
+                break;
+            case PipeConnectionMode.INSERT:
+                ItemStack insertionCard = new ItemStack(ItemRegistry.INSERTION_CARD.get(), 1);
+                items.add(insertionCard);
+                break;
+            case PipeConnectionMode.PASSIVE:
+            default:
+                break;
+        }
+
+        switch (routingStrategy.getId()) {
+            case "round_robin":
+                ItemStack roundRobinCard = new ItemStack(ItemRegistry.ROUND_ROBIN_CARD.get(), 1);
+                items.add(roundRobinCard);
+                break;
+            case "default":
+            default:
+                break;
+        }
+    }
+
+    public <T> void tick(ServerLevel level, BlockPos pos, PipeNetworkView networkView, PipeType<T> type) {
+        long operationTime = calculateOperationTime(); // 1 operation per second
 
         if (++tickCount < operationTime)
             return;
         tickCount = 0;
 
         // TEMP: only do an operation if the current connection is extract mode
-        if (mode != PipeConnectionMode.EXTRACT)
+        if (mode != PipeConnectionMode.EXTRACT && mode != PipeConnectionMode.INSERT)
             return;
 
-        int transferRate = calculateTransferRate(type);
+        int transferRate = calculateTransferRate();
 
         // Get resource handler of this connection
         T base = level.getCapability(type.getBlockCapability(), pos.relative(side), side.getOpposite());
 
-        // Get resource handlers of other connections
-        // Stream hackery, other solution maybe better?
-        List<PipeConnection> targets = networkView.connections.stream()
-                .filter(otherConnection -> otherConnection != this)
-                .filter(otherConnection -> otherConnection.mode == PipeConnectionMode.PASSIVE)
-                .sorted(Comparator.comparing(PipeConnection::getPriority))
-                .toList();
+        // Group targets by priority
+        int largestList = 0;
+        Map<Integer, List<Tuple<PipeConnection, T>>> prioritizedTargets = new HashMap<>(networkView.connections.size());
+        for (PipeConnection target : networkView.connections) {
+            if (target == this) continue;
+            if (target.mode != PipeConnectionMode.PASSIVE) continue;
 
-        if (targets.isEmpty())
-            return;
+            T targetHandler = level.getCapability(type.getBlockCapability(), target.pipePos.relative(target.side), target.side.getOpposite());
+            if (targetHandler == null) {
+                LOGGER.warn("[PipeConnection] Found null connection while ticking!");
+                continue;
+            }
 
-        List<T> targetHandlers = targets.stream()
-                .map(otherConnection -> level.getCapability(type.getBlockCapability(), otherConnection.pipePos.relative(otherConnection.side), otherConnection.side.getOpposite()))
-                .toList();
+            List<Tuple<PipeConnection, T>> list = prioritizedTargets.computeIfAbsent(target.priority, ArrayList::new)
+            list.add(new Tuple<>(target, targetHandler));
+            int listSize = list.size();
+            if (listSize > largestList)
+                largestList = listSize;
+        }
 
-        List<Predicate<Object>> targetFilters = targets.stream()
-                .map(otherConnection -> Arrays.stream(otherConnection.pipeUpgrades).filter(Objects::nonNull).map(PipeUpgrade::getFilter).reduce(a -> true, Predicate::and))
-                .toList();
+        // Only do stuff if needed
+        if (prioritizedTargets.isEmpty()) return;
 
-        Transaction transaction = Transaction.openRoot();
-        routingStrategy.routeExtract(
-                type.getHandlerWrapper(), transaction,
-                base, Arrays.stream(pipeUpgrades).filter(Objects::nonNull).map(PipeUpgrade::getFilter).reduce(a -> true, Predicate::and),
-                targetHandlers, targetFilters,
-                0, transferRate);
+        // Enumerate and sort priority groups
+        int[] priorities = new int[prioritizedTargets.size()];
+        int i = 0;
+        for (int priority : prioritizedTargets.keySet()) {
+            priorities[i++] = priority;
+        }
+        Arrays.sort(priorities);
+
+        // Compute base filter
+        Predicate<Object> baseFilter = Arrays.stream(pipeUpgrades).filter(Objects::nonNull).map(PipeUpgrade::getFilter).reduce(a -> true, Predicate::and);
+
+        // Iterate from highest to lowest priority
+        int totalTransferred = 0;
+        List<T> targetHandlers = new ArrayList<>(largestList);
+        List<Predicate<Object>> targetFilters = new ArrayList<>(largestList);
+        for (int j = priorities.length - 1; j >= 0 && totalTransferred < transferRate; j--) {
+            int priority = priorities[j];
+            List<Tuple<PipeConnection, T>> targets = prioritizedTargets.get(priority);
+
+            // Get the handlers and the filters for the pipe connections
+            for (Tuple<PipeConnection, T> tuple : targets) {
+                targetHandlers.add(tuple.getB());
+                Predicate<Object> targetFilter = Arrays.stream(tuple.getA().pipeUpgrades).filter(Objects::nonNull).map(PipeUpgrade::getFilter).reduce(a -> true, Predicate::and);
+                targetFilters.add(targetFilter);
+            }
+
+            // Transactionally move the items
+            Transaction transaction = Transaction.openRoot();
+            if (mode == PipeConnectionMode.EXTRACT) {
+                totalTransferred += routingStrategy.routeExtract(
+                        type.getHandlerWrapper(), transaction,
+                        base, baseFilter,
+                        targetHandlers, targetFilters,
+                        0, transferRate - totalTransferred);
+            } else {
+                totalTransferred += routingStrategy.routeInsert(
+                        type.getHandlerWrapper(), transaction,
+                        base, baseFilter,
+                        targetHandlers, targetFilters,
+                        0, transferRate - totalTransferred);
+            }
+
+            // Clear lists for next iteration
+            targetHandlers.clear();
+            targetFilters.clear();
+        }
     }
 }

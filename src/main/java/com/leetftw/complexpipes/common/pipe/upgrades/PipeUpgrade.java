@@ -1,4 +1,4 @@
-package com.leetftw.complexpipes.common.pipe.upgrade;
+package com.leetftw.complexpipes.common.pipe.upgrades;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;

@@ -1,8 +1,9 @@
 package com.leetftw.complexpipes.common.pipe.network;
 
-import com.leetftw.complexpipes.common.PipeMod;
+import com.leetftw.complexpipes.common.ComplexPipes;
 import com.leetftw.complexpipes.common.blocks.PipeBlock;
 import com.leetftw.complexpipes.common.blocks.PipeBlockEntity;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -22,38 +23,48 @@ public class PipeNetworkView {
         connections = new ArrayList<>();
     }
 
-    // TODO: make this iterative instead of recursive
-    private static void createPipeNetwork(ServerLevel level, Set<BlockPos> enumeratedPipes, BlockPos currentPipe) {
-        if (!enumeratedPipes.add(currentPipe))
-            return;
+    private static void createPipeNetwork(ServerLevel level, LongOpenHashSet enumeratedPipes, BlockPos start) {
+        ArrayDeque<BlockPos> stack = new ArrayDeque<>();
+        stack.push(start);
 
-        BlockState currentState = level.getBlockState(currentPipe);
-        for (Direction d : Direction.values()) {
-            if (!currentState.getValue(PipeBlock.CONNECTION_MAP.get(d)))
+        while (!stack.isEmpty()) {
+            BlockPos current = stack.pop();
+
+            if (!enumeratedPipes.add(current.asLong()))
                 continue;
 
-            BlockPos neighbourPos = currentPipe.relative(d);
-            BlockState neighbourState = level.getBlockState(neighbourPos);
+            BlockState currentState = level.getBlockState(current);
 
-            if (!(neighbourState.getBlock() instanceof PipeBlock))
-                continue;
+            for (Direction d : Direction.values()) {
+                if (!currentState.getValue(PipeBlock.CONNECTION_MAP.get(d)))
+                    continue;
 
-            createPipeNetwork(level, enumeratedPipes, neighbourPos);
+                BlockPos neighbourPos = current.relative(d);
+                BlockState neighbourState = level.getBlockState(neighbourPos);
+
+                if (neighbourState.getBlock() instanceof PipeBlock) {
+                    stack.push(neighbourPos);
+                }
+            }
         }
     }
 
     public static PipeNetworkView scanBlocks(ServerLevel level, BlockPos initialPos) {
         PipeNetworkView view = new PipeNetworkView();
+        LongOpenHashSet pipeHashSet = new LongOpenHashSet();
 
         // Generate network
-        createPipeNetwork(level, view.pipes, initialPos);
+        createPipeNetwork(level, pipeHashSet, initialPos);
+
+        // Convert hash set
+        pipeHashSet.stream().map(BlockPos::of).forEach(a -> view.pipes.add(a));
 
         // Refresh connections
         // Useful for when a pipe is placed to avoid race condition between BE initializing and enumeration commencing
         for (BlockPos pos : view.pipes) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity == null) {
-                PipeMod.LOGGER.warn("[PipeNetwork] Expected block entity at position " + pos.toShortString());
+                ComplexPipes.LOGGER.warn("[PipeNetwork] Expected block entity at position " + pos.toShortString());
                 continue;
             }
 
@@ -63,7 +74,7 @@ public class PipeNetworkView {
                 pipeBE.setNetworkView(view);
             } else {
                 // Wrong BE type?
-                PipeMod.LOGGER.warn("[PipeNetwork] Wrong block entity class at position " + pos.toShortString());
+                ComplexPipes.LOGGER.warn("[PipeNetwork] Wrong block entity class at position " + pos.toShortString());
             }
         }
         view.connections.sort(Comparator.comparing(PipeConnection::getPipePos));

@@ -1,12 +1,16 @@
 package com.leetftw.complexpipes.common.blocks;
 
-import com.leetftw.complexpipes.common.PipeMod;
+import com.leetftw.complexpipes.common.ComplexPipes;
 import com.leetftw.complexpipes.common.gui.PipeConnectionMenu;
 import com.leetftw.complexpipes.common.items.ItemComponentRegistry;
+import com.leetftw.complexpipes.common.items.ItemRegistry;
+import com.leetftw.complexpipes.common.items.PipeCardItem;
 import com.leetftw.complexpipes.common.items.PipeUpgradeItem;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnection;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnectionMode;
+import com.leetftw.complexpipes.common.pipe.network.PipeNetworkView;
 import com.leetftw.complexpipes.common.pipe.types.PipeType;
+import com.leetftw.complexpipes.common.util.routing.RoundRobinRoutingStrategy;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -14,6 +18,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -21,12 +26,14 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -42,7 +49,6 @@ import java.util.function.Consumer;
 
 public class PipeBlock extends Block implements EntityBlock
 {
-    public static final BooleanProperty HAS_ENTITY = BooleanProperty.create("has_connection");
     public static final BooleanProperty NORTH_CON = BooleanProperty.create("north");
     public static final BooleanProperty EAST_CON = BooleanProperty.create("east");
     public static final BooleanProperty SOUTH_CON = BooleanProperty.create("south");
@@ -69,7 +75,6 @@ public class PipeBlock extends Block implements EntityBlock
         TYPE = pipeType;
 
         registerDefaultState(defaultBlockState()
-                .setValue(HAS_ENTITY, false)
                 .setValue(NORTH_CON, false)
                 .setValue(EAST_CON, false)
                 .setValue(SOUTH_CON, false)
@@ -105,10 +110,15 @@ public class PipeBlock extends Block implements EntityBlock
     }
 
     @Override
+    protected RenderShape getRenderShape(BlockState state) {
+        // TODO: Use a BlockEntityRenderer because the multipart model is straining chunk mesh updates
+        return RenderShape.MODEL;
+    }
+
+    @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder)
     {
         super.createBlockStateDefinition(builder);
-        builder.add(HAS_ENTITY);
         builder.add(NORTH_CON);
         builder.add(EAST_CON);
         builder.add(SOUTH_CON);
@@ -136,19 +146,30 @@ public class PipeBlock extends Block implements EntityBlock
             state = state.setValue(CONNECTION_MAP.get(direction), isNeighbour);
         }
 
-        state = state.setValue(HAS_ENTITY, connection);
-
         return state;
     }
 
     @Override
     protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
-        PipeMod.LOGGER.info("Block update " + pos.toShortString());
+        ComplexPipes.LOGGER.info("[PipeBlock] Block update " + pos.toShortString());
 
         // Determine new state first
         BlockState newState = getStateForPos(state, level, pos);
-        level.setBlockAndUpdate(pos, newState);
 
+        // Then determine if a pipe or a connection was updated
+        // If so, we need to rescan the network
+        if (newState != state) {
+            ComplexPipes.LOGGER.info("[PipeBlock] State of block changed!");
+            // Set the new state (causes a block update)
+            level.setBlockAndUpdate(pos, newState);
+
+            // Rescan network
+            BlockEntity blockEntity = level.getBlockEntity(pos);
+            if (blockEntity instanceof PipeBlockEntity pipeBE
+                && level instanceof ServerLevel serverLevel) {
+                pipeBE.setNetworkView(PipeNetworkView.scanBlocks(serverLevel, pos));
+            }
+        }
     }
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context)
@@ -205,7 +226,7 @@ public class PipeBlock extends Block implements EntityBlock
                 BlockEntity blockEntity = level.getBlockEntity(pos);
                 if (blockEntity instanceof PipeBlockEntity pipeBE) {
                     for (PipeConnection connection : pipeBE.networkView.connections) {
-                        player.displayClientMessage(Component.literal(connection.getPipePos().toShortString() + " | " + connection.getSide().toString() + " | " + connection.getMode().name() + " | " + connection.calculateResourcesPerTick(pipeBE.TYPE) + " per tick"), false);
+                        player.displayClientMessage(Component.literal(connection.getPipePos().toShortString() + " | " + connection.getSide().toString() + " | " + connection.getMode().name() + " | " + connection.calculateResourcesPerTick() + " per tick"), false);
                     }
                 }
             }
@@ -218,7 +239,7 @@ public class PipeBlock extends Block implements EntityBlock
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         AtomicReference<InteractionResult> result = new AtomicReference<>(super.useItemOn(stack, state, level, pos, player, hand, hitResult));
 
-        if (!(stack.getItem() instanceof PipeUpgradeItem)) return result.get();
+        if (!(stack.getItem() instanceof PipeCardItem)) return result.get();
         performHitAction(pos, hitResult, (axis) -> {
             if (level.isClientSide()) return;
 
@@ -228,16 +249,35 @@ public class PipeBlock extends Block implements EntityBlock
             Optional<PipeConnection> connectionOptional = pipeBE.getConnectionForSide(axis);
             if (connectionOptional.isEmpty()) return;
 
-            // Try adding upgrade
-            boolean added = connectionOptional.get().tryAddUpgrade(stack.get(ItemComponentRegistry.PIPE_UPGRADE));
+            // For upgrades: try adding upgrade
+            // For cards: try setting modes
+            boolean added = false;
+            if (stack.getItem() instanceof PipeUpgradeItem) added = connectionOptional.get().tryAddUpgrade(stack.get(ItemComponentRegistry.PIPE_UPGRADE));
+            else if (stack.is(ItemRegistry.ROUND_ROBIN_CARD)) {
+                connectionOptional.get().setRoutingStrategy(new RoundRobinRoutingStrategy());
+                added = true;
+            }
+            else if (stack.is(ItemRegistry.EXTRACTION_CARD)) {
+                PipeConnectionMode oldMode = connectionOptional.get().getMode();
+                if (oldMode != PipeConnectionMode.EXTRACT) {
+                    added = oldMode != PipeConnectionMode.INSERT || player.getInventory().add(new ItemStack(ItemRegistry.INSERTION_CARD.get(), 1));
+                    if (added) connectionOptional.get().setMode(PipeConnectionMode.EXTRACT);
+                }
+            }
+            else if (stack.is(ItemRegistry.INSERTION_CARD)) {
+                PipeConnectionMode oldMode = connectionOptional.get().getMode();
+                if (oldMode != PipeConnectionMode.INSERT) {
+                    added = oldMode != PipeConnectionMode.EXTRACT || player.getInventory().add(new ItemStack(ItemRegistry.EXTRACTION_CARD.get(), 1));
+                    if (added) connectionOptional.get().setMode(PipeConnectionMode.INSERT);
+                }
+            }
+
             if (!added) return;
 
             // Inform player and consume item
             stack.consume(1, player);
             result.set(InteractionResult.CONSUME);
-            if (pipeBE.trySetConnectionMode(axis, PipeConnectionMode.EXTRACT)) {
-                player.displayClientMessage(Component.literal("Installed ").append(stack.getDisplayName()), true);
-            }
+            player.displayClientMessage(Component.literal("Installed ").append(stack.getDisplayName()), true);
 
         }, () -> {});
 

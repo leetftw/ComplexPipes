@@ -1,5 +1,8 @@
-package com.leetftw.complexpipes.common.pipe.upgrade;
+package com.leetftw.complexpipes.common.pipe.upgrades.builtin;
 
+import com.leetftw.complexpipes.common.pipe.upgrades.BuiltinPipeUpgrades;
+import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgrade;
+import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgradeType;
 import com.mojang.serialization.MapCodec;
 
 import java.util.function.Predicate;

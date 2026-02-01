@@ -1,30 +1,33 @@
 package com.leetftw.complexpipes.common.blocks;
 
-import com.leetftw.complexpipes.common.PipeMod;
+import com.leetftw.complexpipes.common.network.PipeSyncPayload;
+import com.leetftw.complexpipes.common.pipe.network.ClientPipeConnection;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnection;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnectionMode;
 import com.leetftw.complexpipes.common.pipe.network.PipeNetworkView;
 import com.leetftw.complexpipes.common.pipe.types.PipeType;
-import com.leetftw.complexpipes.common.pipe.upgrade.PipeUpgrade;
-import com.leetftw.complexpipes.common.util.routing.DefaultRoutingStrategy;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.neoforged.neoforge.transfer.transaction.Transaction;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.function.Predicate;
 
 public class PipeBlockEntity extends BlockEntity {
     // Note: a connection is any pipe which connects to a non-pipe block
     EnumMap<Direction, PipeConnection> ownedConnections;
     @Nullable PipeNetworkView networkView = null;
+    List<ClientPipeConnection> clientPipeConnections = new ArrayList<>();
 
     public final PipeType<?> TYPE;
 
@@ -42,7 +45,7 @@ public class PipeBlockEntity extends BlockEntity {
     // Called on block tick
     int tickCounter = 0;
     public <T> void tick(ServerLevel level, BlockPos pos, BlockState state, PipeType<T> type) {
-        if (!state.getValue(PipeBlock.HAS_ENTITY))
+        if (ownedConnections.isEmpty())
             return;
 
         // Make sure pipe network exists before continuing
@@ -54,9 +57,29 @@ public class PipeBlockEntity extends BlockEntity {
             connection.getValue().tick(level, pos, networkView, type);
             if (connection.getValue().isDirty()) {
                 setChanged();
-                PipeMod.LOGGER.info("[PipeBlockEntity] Marked for saving");
+                //PipeMod.LOGGER.info("[PipeBlockEntity] Marked for saving");
                 connection.getValue().clearDirty();
             }
+        }
+    }
+
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+
+        if (!(level instanceof ServerLevel)) return;
+        Optional<PipeBlockEntity> pipeBE = level.getBlockEntity(pos, TYPE.getBlockEntityType());
+        if (pipeBE.isEmpty()) return;
+
+        List<ItemStack> droppedItems = new ArrayList<>();
+        for (PipeConnection connection : pipeBE.get().getConnections()) {
+            connection.appendItems(droppedItems);
+        }
+
+        for (ItemStack droppedItem : droppedItems) {
+            ItemEntity itemEntity = new ItemEntity(level, pos.getX(), pos.getY(), pos.getZ(), droppedItem);
+            itemEntity.setDefaultPickUpDelay();
+            level.addFreshEntity(itemEntity);
         }
     }
 
@@ -70,12 +93,20 @@ public class PipeBlockEntity extends BlockEntity {
 
             if (serverLevel.getCapability(TYPE.getBlockCapability(), neighbour, dir.getOpposite()) == null) {
                 if (ownedConnections.containsKey(dir)) {
-                    // TODO: pop upgrades out
+                    List<ItemStack> droppedItems = new ArrayList<>();
+                    ownedConnections.get(dir).appendItems(droppedItems);
+                    for (ItemStack droppedItem : droppedItems) {
+                        ItemEntity itemEntity = new ItemEntity(serverLevel, pos.getX(), pos.getY(), pos.getZ(), droppedItem);
+                        itemEntity.setDefaultPickUpDelay();
+                        serverLevel.addFreshEntity(itemEntity);
+                    }
                     ownedConnections.remove(dir);
+                    setChanged();
                 }
             } else {
                 if (!ownedConnections.containsKey(dir)) {
-                    ownedConnections.put(dir, new PipeConnection(pos, dir));
+                    ownedConnections.put(dir, new PipeConnection(TYPE, pos, dir));
+                    setChanged();
                 }
             }
         }
@@ -98,7 +129,15 @@ public class PipeBlockEntity extends BlockEntity {
         for (Map.Entry<Direction, PipeConnection> connectionEntry : ownedConnections.entrySet()) {
             output.store(connectionEntry.getKey().getName(), PipeConnection.CODEC, connectionEntry.getValue());
         }
-        PipeMod.LOGGER.info("[PipeBlockEntity] Saved to disk");
+        //PipeMod.LOGGER.info("[PipeBlockEntity] Saved to disk");
+    }
+
+    public List<ClientPipeConnection> getClientPipeConnections() {
+        return clientPipeConnections;
+    }
+
+    public void setClientPipeConnections(List<ClientPipeConnection> clientPipeConnections) {
+        this.clientPipeConnections = clientPipeConnections;
     }
 
     public Optional<PipeConnection> getConnectionForSide(Direction side) {
@@ -107,6 +146,21 @@ public class PipeBlockEntity extends BlockEntity {
 
     public Collection<PipeConnection> getConnections() {
         return ownedConnections.values();
+    }
+
+    @Override
+    public void setChanged() {
+        super.setChanged();
+
+        if (level instanceof ServerLevel serverLevel) {
+            PacketDistributor.sendToPlayersTrackingChunk(serverLevel,
+                    new ChunkPos(getBlockPos()),
+                    new PipeSyncPayload(level.dimension(), getBlockPos(),
+                            ownedConnections.values().stream()
+                                    .map(connection -> new ClientPipeConnection(connection.getSide(), connection.getMode())).toList()
+                    )
+            );
+        }
     }
 
     public boolean trySetConnectionMode(Direction direction, PipeConnectionMode mode) {

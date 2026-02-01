@@ -1,5 +1,6 @@
 package com.leetftw.complexpipes.client.gui;
 
+import com.leetftw.complexpipes.common.gui.ItemStackFilterMenu;
 import com.leetftw.complexpipes.common.gui.PipeConnectionMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -8,11 +9,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 
-public class PipeConnectionScreen extends AbstractContainerScreen<PipeConnectionMenu> {
+public class ItemStackFilterScreen extends AbstractContainerScreen<ItemStackFilterMenu> {
     private static final Identifier CONTAINER_BACKGROUND = Identifier.withDefaultNamespace("textures/gui/container/generic_54.png");
     private static final int containerRows = 1;
 
-    public PipeConnectionScreen(PipeConnectionMenu menu, Inventory playerInventory, Component title) {
+    public ItemStackFilterScreen(ItemStackFilterMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
 
         this.imageHeight = 114 + containerRows * 18;
@@ -37,10 +38,5 @@ public class PipeConnectionScreen extends AbstractContainerScreen<PipeConnection
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         super.renderLabels(guiGraphics, mouseX, mouseY);
-
-        if (menu.pipeType != null) {
-            guiGraphics.drawString(font, "Current r/op: " + menu.pipeConnection.calculateTransferRate(), 80, 36, -12566464, false);
-            guiGraphics.drawString(font, "Current t/op: " + menu.pipeConnection.calculateOperationTime(), 80, 0, -12566464, false);
-        }
     }
 }

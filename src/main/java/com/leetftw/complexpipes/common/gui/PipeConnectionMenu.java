@@ -3,8 +3,10 @@ package com.leetftw.complexpipes.common.gui;
 import com.leetftw.complexpipes.common.items.ItemComponentRegistry;
 import com.leetftw.complexpipes.common.items.PipeUpgradeItem;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnection;
+import com.leetftw.complexpipes.common.pipe.network.PipeConnectionMode;
+import com.leetftw.complexpipes.common.pipe.types.BuiltinPipeTypes;
 import com.leetftw.complexpipes.common.pipe.types.PipeTypeRegistry;
-import com.leetftw.complexpipes.common.pipe.upgrade.PipeUpgrade;
+import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgrade;
 import com.leetftw.complexpipes.common.pipe.types.PipeType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -14,7 +16,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 public class PipeConnectionMenu extends AbstractContainerMenu {
@@ -104,7 +105,7 @@ public class PipeConnectionMenu extends AbstractContainerMenu {
 
     // Client constructor
     public PipeConnectionMenu(int containerId, Inventory playerInventory) {
-        this(containerId, playerInventory, new PipeConnection(BlockPos.ZERO, Direction.UP), null);
+        this(containerId, playerInventory, new PipeConnection(PipeTypeRegistry.getType("item"), BlockPos.ZERO, Direction.UP), null);
     }
 
     // Server constructor
@@ -112,7 +113,13 @@ public class PipeConnectionMenu extends AbstractContainerMenu {
         super(MenuRegistry.PIPE_CONNECTION_MENU.get(), containerId);
         pipeConnection = connection;
         for (int i = 0; i < PipeConnection.MAX_UPGRADES; i++)
-            addSlot(new Slot(upgradeContainer, i, 8 + (18 * i), 18));
+            addSlot(new Slot(upgradeContainer, i, 8 + (18 * i), 18) {
+                @Override
+                public boolean isActive() {
+                    return true;
+                    //return connection.getMode() == PipeConnectionMode.EXTRACT || connection.getMode() == PipeConnectionMode.INSERT;
+                }
+            });
 
         addStandardInventorySlots(playerInventory, 8, 18 + 18 + 13);
         addDataSlot(new DataSlot() {
@@ -132,7 +139,6 @@ public class PipeConnectionMenu extends AbstractContainerMenu {
     public ItemStack quickMoveStack(Player player, int index) {
         // TODO: Implement this hell
         return ItemStack.EMPTY;
-        //return slots.get(index).getItem();
     }
 
     @Override

@@ -1,6 +1,5 @@
 package com.leetftw.complexpipes.common.pipe.types;
 
-import com.leetftw.complexpipes.common.PipeMod;
 import com.leetftw.complexpipes.common.blocks.PipeBlock;
 import com.leetftw.complexpipes.common.blocks.PipeBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -11,13 +10,14 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.RegisterEvent;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
-import static com.leetftw.complexpipes.common.PipeMod.MODID;
+import static com.leetftw.complexpipes.common.ComplexPipes.MODID;
 
 public class PipeTypeRegistry {
     private static boolean registryFixed = false;
@@ -38,6 +38,9 @@ public class PipeTypeRegistry {
     }
     public static void forEach(Consumer<PipeType<?>> method) {
         registeredTypes.values().forEach(method);
+    }
+    public static <T> Stream<T> map(Function<PipeType<?>, T> method) {
+        return registeredTypes.values().stream().map(method);
     }
     public static int getNumericId(String registeredId) {
         return keys.indexOf(registeredId);

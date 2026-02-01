@@ -7,7 +7,7 @@ import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
-import static com.leetftw.complexpipes.common.PipeMod.MODID;
+import static com.leetftw.complexpipes.common.ComplexPipes.MODID;
 import static com.leetftw.complexpipes.common.items.ItemRegistry.ITEMS;
 
 public class BlockRegistry {

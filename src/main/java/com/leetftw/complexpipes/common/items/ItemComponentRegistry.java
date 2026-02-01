@@ -1,15 +1,13 @@
 package com.leetftw.complexpipes.common.items;
 
-import com.leetftw.complexpipes.common.pipe.upgrade.PipeUpgrade;
-import com.leetftw.complexpipes.common.pipe.upgrade.StackPipeUpgrade;
+import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgrade;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.function.Supplier;
 
-import static com.leetftw.complexpipes.common.PipeMod.MODID;
-import static com.leetftw.complexpipes.common.pipe.upgrade.PipeUpgrade.BASIC_CODEC;
+import static com.leetftw.complexpipes.common.ComplexPipes.MODID;
 
 public class ItemComponentRegistry {
     public static final DeferredRegister.DataComponents COMPONENTS = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, MODID);

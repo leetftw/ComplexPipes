@@ -1,8 +1,7 @@
-package com.leetftw.complexpipes.common.pipe.upgrade;
+package com.leetftw.complexpipes.common.pipe.upgrades;
 
 import com.leetftw.complexpipes.common.items.PipeUpgradeItem;
 import com.mojang.serialization.MapCodec;
-import net.minecraft.world.item.Item;
 
 import java.util.function.Supplier;
 

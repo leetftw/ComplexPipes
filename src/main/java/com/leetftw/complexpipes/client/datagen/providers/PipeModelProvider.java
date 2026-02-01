@@ -5,8 +5,7 @@ import com.leetftw.complexpipes.common.blocks.PipeBlock;
 import com.leetftw.complexpipes.common.items.ItemRegistry;
 import com.leetftw.complexpipes.common.pipe.types.PipeType;
 import com.leetftw.complexpipes.common.pipe.types.PipeTypeRegistry;
-import com.leetftw.complexpipes.common.pipe.upgrade.BuiltinPipeUpgrades;
-import com.leetftw.complexpipes.common.pipe.upgrade.PipeUpgradeRegistry;
+import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgradeRegistry;
 import com.mojang.math.Quadrant;
 import net.minecraft.client.data.models.*;
 import net.minecraft.client.data.models.blockstates.*;
@@ -21,7 +20,7 @@ import net.neoforged.neoforge.client.model.generators.template.ExtendedModelTemp
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import static com.leetftw.complexpipes.common.PipeMod.MODID;
+import static com.leetftw.complexpipes.common.ComplexPipes.MODID;
 
 public class PipeModelProvider extends ModelProvider
 {
@@ -46,8 +45,8 @@ public class PipeModelProvider extends ModelProvider
 
         private void createPipeFrame(PipeType<?> pipeType)
         {
-            Identifier quarryFrameBase = Identifier.fromNamespaceAndPath(MODID, "block/pipe_frame_base");
-            Identifier quarryFrameExtension = Identifier.fromNamespaceAndPath(MODID, "block/pipe_frame_extension");
+            Identifier quarryFrameBase = Identifier.fromNamespaceAndPath(MODID, "block/pipe_base");
+            Identifier quarryFrameExtension = Identifier.fromNamespaceAndPath(MODID, "block/pipe_extension");
 
             // Create block models
             TextureSlot slot = TextureSlot.create("0");
@@ -87,7 +86,9 @@ public class PipeModelProvider extends ModelProvider
                                     .with(VariantMutator.X_ROT.withValue(Quadrant.R90)));
 
 
+
             itemModelOutput.register(pipeType.getBlock().asItem(), new ClientItem(ItemModelUtils.plainModel(quarryFrameBase), ClientItem.Properties.DEFAULT));
+            //blockStateOutput.accept(MultiVariantGenerator.dispatch(pipeType.getBlock(), BlockModelGenerators.variant(baseVariant)));
             blockStateOutput.accept(generator);
         }
 
@@ -116,6 +117,9 @@ public class PipeModelProvider extends ModelProvider
                 generateFlatItem(upgrade.getValue().getItem(), ModelTemplates.FLAT_ITEM);
 
             generateFlatItem(ItemRegistry.DEBUG_ITEM.get(), ModelTemplates.FLAT_ITEM);
+            generateFlatItem(ItemRegistry.EXTRACTION_CARD.get(), ModelTemplates.FLAT_ITEM);
+            generateFlatItem(ItemRegistry.INSERTION_CARD.get(), ModelTemplates.FLAT_ITEM);
+            generateFlatItem(ItemRegistry.ROUND_ROBIN_CARD.get(), ModelTemplates.FLAT_ITEM);
         }
     }
 }

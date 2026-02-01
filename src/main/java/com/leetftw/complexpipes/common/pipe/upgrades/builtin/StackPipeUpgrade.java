@@ -1,17 +1,20 @@
-package com.leetftw.complexpipes.common.pipe.upgrade;
+package com.leetftw.complexpipes.common.pipe.upgrades.builtin;
 
+import com.leetftw.complexpipes.common.pipe.upgrades.BuiltinPipeUpgrades;
+import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgrade;
+import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgradeType;
 import com.mojang.serialization.MapCodec;
 
 import java.util.function.Predicate;
 
-/// Increases the stack size transferred per pipe operation for energy pipes
-public class EnergyPipeUpgrade extends PipeUpgrade {
-    public static final EnergyPipeUpgrade INSTANCE = new EnergyPipeUpgrade();
-    public static final MapCodec<EnergyPipeUpgrade> CODEC = MapCodec.unit(INSTANCE);
+/// Increases the stack size transferred per pipe operation
+public class StackPipeUpgrade extends PipeUpgrade {
+    public static final StackPipeUpgrade INSTANCE = new StackPipeUpgrade();
+    public static final MapCodec<StackPipeUpgrade> CODEC = MapCodec.unit(INSTANCE);
 
     @Override
     public PipeUpgradeType getType() {
-        return BuiltinPipeUpgrades.ENERGY_UPGRADE;
+        return BuiltinPipeUpgrades.STACK_UPGRADE;
     }
 
     @Override
@@ -31,7 +34,7 @@ public class EnergyPipeUpgrade extends PipeUpgrade {
 
     @Override
     public double getTransferAmountMultiplier() {
-        return 4;
+        return 2;
     }
 
     @Override
@@ -44,7 +47,8 @@ public class EnergyPipeUpgrade extends PipeUpgrade {
         return 6;
 
         // Upgrades: 0,   1,   2,    3,    4,    5,    6
-        // Energy:   128, 512, 2048, 8192, 32k,  128k, 512k   FE/t
+        // Items:    1,   2,   4,    8,    16,   32,   64     items/op
+        // Fluid:    250, 500, 1000, 2000, 4000, 8000, 16000  mB/op
     }
 
     @Override
@@ -54,11 +58,11 @@ public class EnergyPipeUpgrade extends PipeUpgrade {
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof EnergyPipeUpgrade;
+        return obj instanceof StackPipeUpgrade;
     }
 
     @Override
     public int hashCode() {
-        return "EnergyPipeUpgrade".hashCode();
+        return "StackPipeUpgrade".hashCode();
     }
 }
