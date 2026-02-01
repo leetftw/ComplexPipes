@@ -225,6 +225,8 @@ public class PipeBlock extends Block implements EntityBlock
             if (!level.isClientSide()) {
                 BlockEntity blockEntity = level.getBlockEntity(pos);
                 if (blockEntity instanceof PipeBlockEntity pipeBE) {
+                    if (pipeBE.networkView == null)
+                        return;
                     for (PipeConnection connection : pipeBE.networkView.connections) {
                         player.displayClientMessage(Component.literal(connection.getPipePos().toShortString() + " | " + connection.getSide().toString() + " | " + connection.getMode().name() + " | " + connection.calculateResourcesPerTick() + " per tick"), false);
                     }

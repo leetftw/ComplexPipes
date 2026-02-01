@@ -56,7 +56,7 @@ public class ItemStackFilterMenu extends AbstractContainerMenu {
 
         @Override
         public @NonNull ItemStack removeItemNoUpdate(int slot) {
-            return null;
+            return ItemStack.EMPTY;
         }
 
         @Override
