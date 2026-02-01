@@ -271,7 +271,7 @@ public class PipeConnection {
                 continue;
             }
 
-            List<Tuple<PipeConnection, T>> list = prioritizedTargets.computeIfAbsent(target.priority, ArrayList::new)
+            List<Tuple<PipeConnection, T>> list = prioritizedTargets.computeIfAbsent(target.priority, ArrayList::new);
             list.add(new Tuple<>(target, targetHandler));
             int listSize = list.size();
             if (listSize > largestList)
@@ -308,19 +308,22 @@ public class PipeConnection {
             }
 
             // Transactionally move the items
-            Transaction transaction = Transaction.openRoot();
-            if (mode == PipeConnectionMode.EXTRACT) {
-                totalTransferred += routingStrategy.routeExtract(
-                        type.getHandlerWrapper(), transaction,
-                        base, baseFilter,
-                        targetHandlers, targetFilters,
-                        0, transferRate - totalTransferred);
-            } else {
-                totalTransferred += routingStrategy.routeInsert(
-                        type.getHandlerWrapper(), transaction,
-                        base, baseFilter,
-                        targetHandlers, targetFilters,
-                        0, transferRate - totalTransferred);
+            try (Transaction transaction = Transaction.openRoot()) {
+                if (mode == PipeConnectionMode.EXTRACT) {
+                    totalTransferred += routingStrategy.routeExtract(
+                            type.getHandlerWrapper(), transaction,
+                            base, baseFilter,
+                            targetHandlers, targetFilters,
+                            0, transferRate - totalTransferred);
+                } else {
+                    totalTransferred += routingStrategy.routeInsert(
+                            type.getHandlerWrapper(), transaction,
+                            base, baseFilter,
+                            targetHandlers, targetFilters,
+                            0, transferRate - totalTransferred);
+                }
+            } catch (IllegalStateException e) {
+                LOGGER.error("[PipeConnection] Could not open transaction for transferring items!", e);
             }
 
             // Clear lists for next iteration
