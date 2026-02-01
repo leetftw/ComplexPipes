@@ -1,34 +1,26 @@
 package com.leetftw.complexpipes.common.gui;
 
 import com.leetftw.complexpipes.common.items.ItemComponentRegistry;
-import com.leetftw.complexpipes.common.items.PipeUpgradeItem;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnection;
-import com.leetftw.complexpipes.common.pipe.network.PipeConnectionMode;
-import com.leetftw.complexpipes.common.pipe.types.PipeType;
-import com.leetftw.complexpipes.common.pipe.types.PipeTypeRegistry;
 import com.leetftw.complexpipes.common.pipe.upgrades.BuiltinPipeUpgrades;
 import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgrade;
 import com.leetftw.complexpipes.common.pipe.upgrades.builtin.ItemStackPipeFilter;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.DataSlot;
-import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.transfer.item.ItemResource;
-import org.jspecify.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.Objects;
 
 public class ItemStackFilterMenu extends AbstractContainerMenu {
-    private ItemStack stack;
+    private final ItemStack stack;
     private ItemStackPipeFilter filter = null;
-    private Container filterContainer = new Container() {
+    private final Container filterContainer = new Container() {
         @Override
         public int getMaxStackSize() {
             return 1;
@@ -53,7 +45,7 @@ public class ItemStackFilterMenu extends AbstractContainerMenu {
         }
 
         @Override
-        public ItemStack removeItem(int slot, int amount) {
+        public @NonNull ItemStack removeItem(int slot, int amount) {
             if (amount <= 0) return ItemStack.EMPTY;
 
             filter.items[slot] = null;
@@ -63,12 +55,12 @@ public class ItemStackFilterMenu extends AbstractContainerMenu {
         }
 
         @Override
-        public ItemStack removeItemNoUpdate(int slot) {
+        public @NonNull ItemStack removeItemNoUpdate(int slot) {
             return null;
         }
 
         @Override
-        public void setItem(int slot, ItemStack stack2) {
+        public void setItem(int slot, @NonNull ItemStack stack2) {
             filter.items[slot] = ItemResource.of(stack2);
             stack.set(ItemComponentRegistry.PIPE_UPGRADE, filter);
         }
@@ -79,7 +71,7 @@ public class ItemStackFilterMenu extends AbstractContainerMenu {
         }
 
         @Override
-        public boolean stillValid(Player player) {
+        public boolean stillValid(@NonNull Player player) {
             return true;
         }
 
@@ -91,13 +83,13 @@ public class ItemStackFilterMenu extends AbstractContainerMenu {
         }
     };
 
-    private class FilterSlot extends Slot {
+    private static class FilterSlot extends Slot {
         public FilterSlot(Container container, int slot, int x, int y) {
             super(container, slot, x, y);
         }
 
         @Override
-        public ItemStack safeInsert(ItemStack stack2, int increment) {
+        public @NonNull ItemStack safeInsert(@NonNull ItemStack stack2, int increment) {
             if (this.mayPlace(stack2)) {
                 container.setItem(getContainerSlot(), stack2);
                 setChanged();
@@ -133,12 +125,12 @@ public class ItemStackFilterMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public ItemStack quickMoveStack(Player player, int index) {
+    public @NonNull ItemStack quickMoveStack(@NonNull Player player, int index) {
         return ItemStack.EMPTY;
     }
 
     @Override
-    public boolean stillValid(Player player) {
+    public boolean stillValid(@NonNull Player player) {
         return true;
     }
 }

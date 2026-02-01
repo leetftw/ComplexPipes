@@ -3,14 +3,13 @@ package com.leetftw.complexpipes.common.network;
 import com.leetftw.complexpipes.common.pipe.network.ClientPipeConnection;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -34,7 +33,7 @@ public record PipeSyncPayload(ResourceKey<Level> dimension, BlockPos position, L
     );
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NonNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

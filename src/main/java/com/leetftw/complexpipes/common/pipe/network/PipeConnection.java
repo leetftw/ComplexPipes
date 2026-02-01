@@ -1,6 +1,5 @@
 package com.leetftw.complexpipes.common.pipe.network;
 
-import com.leetftw.complexpipes.common.ComplexPipes;
 import com.leetftw.complexpipes.common.items.ItemComponentRegistry;
 import com.leetftw.complexpipes.common.items.ItemRegistry;
 import com.leetftw.complexpipes.common.pipe.types.PipeType;
@@ -13,16 +12,13 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.leetftw.complexpipes.common.ComplexPipes.LOGGER;

@@ -1,9 +1,6 @@
 package com.leetftw.complexpipes.common.util.routing;
 
 import com.leetftw.complexpipes.common.util.PipeHandlerWrapper;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.gametest.framework.GameTestInstance;
-import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 import java.util.List;

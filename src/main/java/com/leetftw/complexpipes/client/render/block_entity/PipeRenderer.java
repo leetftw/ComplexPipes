@@ -2,44 +2,26 @@ package com.leetftw.complexpipes.client.render.block_entity;
 
 import com.leetftw.complexpipes.common.blocks.PipeBlockEntity;
 import com.leetftw.complexpipes.common.pipe.network.ClientPipeConnection;
-import com.leetftw.complexpipes.common.pipe.network.PipeConnection;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnectionMode;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
-import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MaterialMapper;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.block.model.BlockStateModel;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
-import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
-import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.Material;
-import net.minecraft.core.Direction;
-import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.Display;
-import net.minecraft.world.entity.vehicle.minecart.Minecart;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
-import org.joml.Quaternionfc;
 import org.joml.Vector3f;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-
-import java.nio.channels.Pipe;
-
-import static com.leetftw.complexpipes.common.ComplexPipes.MODID;
-import static net.minecraft.client.renderer.entity.state.EntityRenderState.NO_OUTLINE;
 
 public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity, PipeRenderState> {
     public PipeRenderer(BlockEntityRendererProvider.Context context) {
@@ -54,13 +36,13 @@ public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity, PipeRe
     }
 
     @Override
-    public void extractRenderState(PipeBlockEntity blockEntity, PipeRenderState renderState, float partialTick, Vec3 cameraPosition, ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
+    public void extractRenderState(PipeBlockEntity blockEntity, PipeRenderState renderState, float partialTick, @NonNull Vec3 cameraPosition, ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
         BlockEntityRenderer.super.extractRenderState(blockEntity, renderState, partialTick, cameraPosition, breakProgress);
         renderState.pipeBlockEntity = blockEntity;
     }
 
     @Override
-    public void submit(PipeRenderState renderState, PoseStack poseStack, SubmitNodeCollector nodeCollector, CameraRenderState cameraRenderState) {
+    public void submit(PipeRenderState renderState, PoseStack poseStack, @NonNull SubmitNodeCollector nodeCollector, @NonNull CameraRenderState cameraRenderState) {
         int overlay = OverlayTexture.NO_OVERLAY;
         poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);
@@ -85,13 +67,13 @@ public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity, PipeRe
 
             nodeCollector.submitCustomGeometry(poseStack, pipeMaterial.renderType(RenderTypes::entitySolid), (PoseStack.Pose pose, VertexConsumer consumer) -> {
                 BlockColors blockColors = Minecraft.getInstance().getBlockColors();
-                int color = blockColors.getColor(
+                /*int color = blockColors.getColor(
                         renderState.blockState,
                         renderState.pipeBlockEntity.getLevel(),
                         renderState.blockPos
-                );
+                );*/
 
-                color = 0xFFFFFFFF;
+                int color = 0xFFFFFFFF;
 
                 Vector3f normal = new Vector3f(-1, 0, 0);
 

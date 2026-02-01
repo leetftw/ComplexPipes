@@ -4,7 +4,6 @@ import com.leetftw.complexpipes.common.util.PipeHandlerWrapper;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 

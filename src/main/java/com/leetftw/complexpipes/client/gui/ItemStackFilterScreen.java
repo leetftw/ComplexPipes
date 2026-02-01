@@ -1,13 +1,13 @@
 package com.leetftw.complexpipes.client.gui;
 
 import com.leetftw.complexpipes.common.gui.ItemStackFilterMenu;
-import com.leetftw.complexpipes.common.gui.PipeConnectionMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
+import org.jspecify.annotations.NonNull;
 
 public class ItemStackFilterScreen extends AbstractContainerScreen<ItemStackFilterMenu> {
     private static final Identifier CONTAINER_BACKGROUND = Identifier.withDefaultNamespace("textures/gui/container/generic_54.png");
@@ -21,7 +21,7 @@ public class ItemStackFilterScreen extends AbstractContainerScreen<ItemStackFilt
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
+    public void render(@NonNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
     {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
@@ -36,7 +36,7 @@ public class ItemStackFilterScreen extends AbstractContainerScreen<ItemStackFilt
     }
 
     @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    protected void renderLabels(@NonNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
         super.renderLabels(guiGraphics, mouseX, mouseY);
     }
 }

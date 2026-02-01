@@ -3,8 +3,6 @@ package com.leetftw.complexpipes.common.gui;
 import com.leetftw.complexpipes.common.items.ItemComponentRegistry;
 import com.leetftw.complexpipes.common.items.PipeUpgradeItem;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnection;
-import com.leetftw.complexpipes.common.pipe.network.PipeConnectionMode;
-import com.leetftw.complexpipes.common.pipe.types.BuiltinPipeTypes;
 import com.leetftw.complexpipes.common.pipe.types.PipeTypeRegistry;
 import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgrade;
 import com.leetftw.complexpipes.common.pipe.types.PipeType;
@@ -15,12 +13,13 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
 public class PipeConnectionMenu extends AbstractContainerMenu {
-    public PipeConnection pipeConnection = null;
-    private Container upgradeContainer = new Container() {
+    public PipeConnection pipeConnection;
+    private final Container upgradeContainer = new Container() {
         @Override
         public int getMaxStackSize() {
             return 1;
@@ -37,7 +36,7 @@ public class PipeConnectionMenu extends AbstractContainerMenu {
         }
 
         @Override
-        public ItemStack getItem(int slot) {
+        public @NonNull ItemStack getItem(int slot) {
             PipeUpgrade upgrade = pipeConnection.getUpgradeInSlot(slot);
             if (upgrade == null) return ItemStack.EMPTY;
 
@@ -48,7 +47,7 @@ public class PipeConnectionMenu extends AbstractContainerMenu {
         }
 
         @Override
-        public ItemStack removeItem(int slot, int amount) {
+        public @NonNull ItemStack removeItem(int slot, int amount) {
             if (amount < 1)
                 return ItemStack.EMPTY;
 
@@ -66,8 +65,8 @@ public class PipeConnectionMenu extends AbstractContainerMenu {
         }
 
         @Override
-        public ItemStack removeItemNoUpdate(int slot) {
-            return null;
+        public @NonNull ItemStack removeItemNoUpdate(int slot) {
+            return ItemStack.EMPTY;
         }
 
         @Override
@@ -90,7 +89,7 @@ public class PipeConnectionMenu extends AbstractContainerMenu {
         }
 
         @Override
-        public boolean stillValid(Player player) {
+        public boolean stillValid(@NonNull Player player) {
             return true;
         }
 
@@ -136,13 +135,13 @@ public class PipeConnectionMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public ItemStack quickMoveStack(Player player, int index) {
+    public @NonNull ItemStack quickMoveStack(@NonNull Player player, int index) {
         // TODO: Implement this hell
         return ItemStack.EMPTY;
     }
 
     @Override
-    public boolean stillValid(Player player) {
+    public boolean stillValid(@NonNull Player player) {
         return true;
     }
 }

@@ -1,15 +1,8 @@
 package com.leetftw.complexpipes.common.tests;
 
-import net.minecraft.core.Holder;
-import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.data.registries.VanillaRegistries;
 import net.minecraft.gametest.framework.*;
-import net.minecraft.resources.Identifier;
-import net.minecraft.world.level.block.Rotation;
 import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.function.Consumer;

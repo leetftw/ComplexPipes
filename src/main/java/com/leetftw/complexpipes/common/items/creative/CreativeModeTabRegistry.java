@@ -1,15 +1,12 @@
 package com.leetftw.complexpipes.common.items.creative;
 
 import com.leetftw.complexpipes.common.items.ItemRegistry;
-import com.leetftw.complexpipes.common.pipe.types.BuiltinPipeTypes;
 import com.leetftw.complexpipes.common.pipe.types.PipeTypeRegistry;
 import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgradeRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
-import net.neoforged.bus.EventBus;
-import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
