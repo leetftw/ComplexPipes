@@ -268,7 +268,6 @@ public class PipeConnection {
             return;
         tickCount = 0;
 
-        // TEMP: only do an operation if the current connection is extract mode
         if (mode != PipeConnectionMode.EXTRACT && mode != PipeConnectionMode.INSERT)
             return;
 
@@ -315,8 +314,17 @@ public class PipeConnection {
 
         // Iterate from highest to lowest priority
         int totalTransferred = 0;
+
+        // Cached lists
         List<T> targetHandlers = new ArrayList<>(largestList);
         List<Predicate<Object>> targetFilters = new ArrayList<>(largestList);
+        List<Integer> targetRatios = new ArrayList<>(largestList);
+        BaseRoutingStrategy.TargetBatch<T> targetBatch = new BaseRoutingStrategy.TargetBatch<>(
+                targetHandlers,
+                targetFilters,
+                targetRatios
+        );
+
         for (int j = priorities.length - 1; j >= 0 && totalTransferred < transferRate; j--) {
             int priority = priorities[j];
             List<Tuple<PipeConnection, T>> targets = prioritizedTargets.get(priority);
@@ -326,21 +334,22 @@ public class PipeConnection {
                 targetHandlers.add(tuple.getB());
                 Predicate<Object> targetFilter = useFilters ? tuple.getA().computePredicate() : alwaysTrue;
                 targetFilters.add(targetFilter);
+                targetRatios.add(tuple.getA().getRatio());
             }
 
             // Transactionally move the items
             try (Transaction transaction = Transaction.openRoot()) {
                 if (mode == PipeConnectionMode.EXTRACT) {
                     totalTransferred += routingStrategy.routeExtract(
-                            type.getHandlerWrapper(), transaction,
+                            transaction, type.getHandlerWrapper(),
                             base, baseFilter,
-                            targetHandlers, targetFilters,
+                            targetBatch,
                             0, transferRate - totalTransferred);
                 } else {
                     totalTransferred += routingStrategy.routeInsert(
-                            type.getHandlerWrapper(), transaction,
+                            transaction, type.getHandlerWrapper(),
                             base, baseFilter,
-                            targetHandlers, targetFilters,
+                            targetBatch,
                             0, transferRate - totalTransferred);
                 }
             } catch (IllegalStateException e) {
@@ -350,6 +359,7 @@ public class PipeConnection {
             // Clear lists for next iteration
             targetHandlers.clear();
             targetFilters.clear();
+            targetRatios.clear();
         }
     }
 }

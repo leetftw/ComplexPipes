@@ -12,9 +12,11 @@ public class RoundRobinRoutingStrategy extends BaseRoutingStrategy {
     int insertionIndex = 0;
 
     @Override
-    protected <T> int route(PipeHandlerWrapper<T> handlerWrapper, Transaction transaction, T base, Predicate<Object> baseFilter, List<T> targets, List<Predicate<Object>> targetFilters, int minTransfer, int maxTransfer, Function<Transfer<T>, Integer> transferFunction) {
+    protected <T> int route(Transaction transaction, PipeHandlerWrapper<T> handlerWrapper, T base, Predicate<Object> baseFilter, TargetBatch<T> targets, int minTransfer, int maxTransfer, TransferFunction transferFunction) {
+        List<T> handlers = targets.handlers();
+
         // Reset when size of list changes
-        if (previousConnectionCount != targets.size()) {
+        if (previousConnectionCount != handlers.size()) {
             insertionIndex = 0;
         }
 
@@ -23,7 +25,7 @@ public class RoundRobinRoutingStrategy extends BaseRoutingStrategy {
             insertionIndex = 0;
         }
 
-        if (maxTransfer <= 0 || targets.isEmpty()) {
+        if (maxTransfer <= 0 || handlers.isEmpty()) {
             transaction.close();
             return 0;
         }
@@ -40,25 +42,26 @@ public class RoundRobinRoutingStrategy extends BaseRoutingStrategy {
         //  Alternative cycle when both 3 and 4 do not accept: 1-2
 
         // TODO: Check validity of this loop
+        List<Predicate<Object>> filters = targets.filters();
         int amountTransferred = 0;
         int currentIndex = insertionIndex;
-        int targetCount = targets.size();
+        int targetCount = handlers.size();
         while (amountTransferred == 0 && (currentIndex + 1) % targetCount != insertionIndex) {
-            T handler = targets.get(insertionIndex);
-            Transfer<T> t = new Transfer<>();
-            t.handlerWrapper = handlerWrapper;
-            t.transaction = transaction;
-            t.base = base;
-            t.target = handler;
-            t.filter = baseFilter.and(targetFilters.get(insertionIndex));
-            t.desiredAmount = maxTransfer;
-            amountTransferred = transferFunction.apply(t);
+            T targetHandler = handlers.get(insertionIndex);
+            CONJUNCTION.setPredicates(baseFilter, filters.get(insertionIndex));
+            amountTransferred = transferFunction.transfer(
+                    handlerWrapper,
+                    base, targetHandler,
+                    maxTransfer,
+                    CONJUNCTION,
+                    transaction
+            );
             currentIndex = (currentIndex + 1) % targetCount;
         }
 
         assert amountTransferred <= maxTransfer;
         if (amountTransferred >= minTransfer) {
-            previousConnectionCount = targets.size();
+            previousConnectionCount = handlers.size();
             insertionIndex = currentIndex;
             transaction.commit();
             transaction.close();
