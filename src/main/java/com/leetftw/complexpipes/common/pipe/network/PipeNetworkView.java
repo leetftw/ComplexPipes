@@ -17,10 +17,19 @@ import java.util.*;
 public class PipeNetworkView {
     Set<BlockPos> pipes;
     public List<PipeConnection> connections;
+    private boolean valid = true;
 
     private PipeNetworkView() {
         pipes = new HashSet<>();
         connections = new ArrayList<>();
+    }
+
+    public void invalidate() {
+        valid = false;
+    }
+
+    public boolean isValid() {
+        return valid;
     }
 
     private static void createPipeNetwork(ServerLevel level, LongOpenHashSet enumeratedPipes, BlockPos start) {

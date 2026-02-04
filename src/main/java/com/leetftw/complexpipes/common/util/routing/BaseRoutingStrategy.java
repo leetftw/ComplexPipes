@@ -1,13 +1,13 @@
 package com.leetftw.complexpipes.common.util.routing;
 
-import com.leetftw.complexpipes.common.pipe.network.PipeConnection;
 import com.leetftw.complexpipes.common.util.ConjunctionPredicate;
 import com.leetftw.complexpipes.common.util.PipeHandlerWrapper;
+import net.minecraft.nbt.CompoundTag;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
-import java.util.function.Function;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 public abstract class BaseRoutingStrategy {
@@ -36,11 +36,12 @@ public abstract class BaseRoutingStrategy {
 
     protected static final ConjunctionPredicate CONJUNCTION = new ConjunctionPredicate();
 
+    // TODO: Remove minTransfer as it is handled by PipeConnection::tick already
     protected abstract <T> int route(
             Transaction transaction,
             PipeHandlerWrapper<T> handlerWrapper,
             T base, Predicate<Object> baseFilter,
-            TargetBatch<T> targets,
+            TargetBatch<T> targets, int priorityLevel,
             int minTransfer, int maxTransfer,
             TransferFunction transferFunction);
 
@@ -48,29 +49,40 @@ public abstract class BaseRoutingStrategy {
             Transaction transaction,
             PipeHandlerWrapper<T> handlerWrapper,
             T base, Predicate<Object> baseFilter,
-            TargetBatch<T> targets,
+            TargetBatch<T> targets, int priorityLevel,
             int minTransfer, int maxTransfer) {
-        return route(transaction, handlerWrapper, base, baseFilter, targets, minTransfer, maxTransfer, EXTRACT);
+        return route(transaction, handlerWrapper, base, baseFilter, targets, priorityLevel,  minTransfer, maxTransfer, EXTRACT);
     }
 
     public final <T> int routeInsert(
             Transaction transaction,
             PipeHandlerWrapper<T> handlerWrapper,
             T base, Predicate<Object> baseFilter,
-            TargetBatch<T> targets,
+            TargetBatch<T> targets, int priorityLevel,
             int minTransfer, int maxTransfer) {
-        return route(transaction, handlerWrapper, base, baseFilter, targets, minTransfer, maxTransfer, INSERT);
+        return route(transaction, handlerWrapper, base, baseFilter, targets, priorityLevel, minTransfer, maxTransfer, INSERT);
     }
 
+    protected void saveAdditional(CompoundTag data) { }
+    public CompoundTag serialize() {
+        CompoundTag tag = new CompoundTag();
+        tag.putString("id", getId());
+        CompoundTag dataTag = new CompoundTag();
+        saveAdditional(dataTag);
+        tag.put("data", dataTag);
+        return tag;
+    }
     public abstract String getId();
 
-    public static BaseRoutingStrategy create(String id) {
-        switch (id) {
-            case "round_robin":
-                return new RoundRobinRoutingStrategy();
-            case "default":
-            default:
-                return new DefaultRoutingStrategy();
-        }
+    public static BaseRoutingStrategy create(CompoundTag tag) {
+        String id = tag.getStringOr("id", "default");
+        return switch (id) {
+            case "round_robin" -> {
+                Optional<CompoundTag> data = tag.getCompound("data");
+                yield data.map(RoundRobinRoutingStrategy::create).orElseGet(RoundRobinRoutingStrategy::new);
+            }
+            case "ratio" -> new RatioRoutingStrategy();
+            default -> new DefaultRoutingStrategy();
+        };
     }
 }

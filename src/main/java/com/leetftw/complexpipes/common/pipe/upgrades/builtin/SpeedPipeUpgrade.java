@@ -1,5 +1,6 @@
 package com.leetftw.complexpipes.common.pipe.upgrades.builtin;
 
+import com.leetftw.complexpipes.common.ServerConfig;
 import com.leetftw.complexpipes.common.pipe.upgrades.BuiltinPipeUpgrades;
 import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgrade;
 import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgradeType;
@@ -29,7 +30,7 @@ public class SpeedPipeUpgrade extends PipeUpgrade {
 
     @Override
     public double getTransferIntervalMultiplier() {
-        return 0.5;
+        return ServerConfig.SPEED_UPGRADE_MULTIPLIER.get();
     }
 
     @Override
@@ -39,7 +40,7 @@ public class SpeedPipeUpgrade extends PipeUpgrade {
 
     @Override
     public int getMaxInstalledCount() {
-        return 4;
+        return ServerConfig.MAX_SPEED_UPGRADES.get();
 
         // Upgrades:    0,   1,   2,    3,           4
         // Item/fluid:  20,  10,  5,    2.5 (=3),    1  t/op

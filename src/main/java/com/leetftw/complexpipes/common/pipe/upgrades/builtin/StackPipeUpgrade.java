@@ -1,5 +1,6 @@
 package com.leetftw.complexpipes.common.pipe.upgrades.builtin;
 
+import com.leetftw.complexpipes.common.ServerConfig;
 import com.leetftw.complexpipes.common.pipe.upgrades.BuiltinPipeUpgrades;
 import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgrade;
 import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgradeType;
@@ -34,12 +35,12 @@ public class StackPipeUpgrade extends PipeUpgrade {
 
     @Override
     public double getTransferAmountMultiplier() {
-        return 2;
+        return ServerConfig.STACK_UPGRADE_MULTIPLIER.get();
     }
 
     @Override
     public int getMaxInstalledCount() {
-        return 6;
+        return ServerConfig.MAX_STACK_UPGRADES.get();
 
         // Upgrades: 0,   1,   2,    3,    4,    5,    6
         // Items:    1,   2,   4,    8,    16,   32,   64     items/op

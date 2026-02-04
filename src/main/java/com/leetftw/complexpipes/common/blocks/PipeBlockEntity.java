@@ -1,6 +1,5 @@
 package com.leetftw.complexpipes.common.blocks;
 
-import com.leetftw.complexpipes.common.network.PipeSyncPayload;
 import com.leetftw.complexpipes.common.pipe.network.ClientPipeConnection;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnection;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnectionMode;
@@ -8,8 +7,15 @@ import com.leetftw.complexpipes.common.pipe.network.PipeNetworkView;
 import com.leetftw.complexpipes.common.pipe.types.PipeType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
@@ -18,7 +24,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -49,7 +54,7 @@ public class PipeBlockEntity extends BlockEntity {
             return;
 
         // Make sure pipe network exists before continuing
-        if (networkView == null) {
+        if (networkView == null || !networkView.isValid()) {
             networkView = PipeNetworkView.scanBlocks(level, pos);
         }
 
@@ -115,6 +120,58 @@ public class PipeBlockEntity extends BlockEntity {
             ownedConnection.overwritePipePos(pos);
     }
 
+    // Return our packet here. This method returning a non-null result tells the game to use this packet for syncing.
+    @Override
+    public Packet<ClientGamePacketListener> getUpdatePacket() {
+        // The packet uses the CompoundTag returned by #getUpdateTag. An alternative overload of #create exists
+        // that allows you to specify a custom update tag, including the ability to omit data the client might not need.
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    public void onDataPacket(Connection net, ValueInput valueInput) {
+        if (valueInput.keySet().contains("clientConnections")) {
+            handleUpdateTag(valueInput);
+        }
+        else {
+            super.onDataPacket(net, valueInput);
+        }
+    }
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = new CompoundTag();
+        ListTag list = new ListTag();
+        for (PipeConnection connection : ownedConnections.values()) {
+            CompoundTag entryTag = new CompoundTag();
+            entryTag.putString("side", connection.getSide().name());
+            entryTag.putString("mode", connection.getMode().name());
+            list.add(entryTag);
+        }
+        tag.put("clientConnections", list);
+        return tag;
+    }
+
+    // Handle a received update tag here. The default implementation calls #loadWithComponents here,
+    // so you do not need to override this method if you don't plan to do anything beyond that.
+    @Override
+    public void handleUpdateTag(ValueInput input) {
+        //super.handleUpdateTag(input);
+        Optional<ValueInput.ValueInputList> listOptional = input.childrenList("clientConnections");
+
+        //Optional<CompoundTag> listTagOpt = input.read("list", CompoundTag.CODEC);
+        if (listOptional.isEmpty()) return;
+
+        clientPipeConnections.clear();
+        ValueInput.ValueInputList list = listOptional.get();
+        list.forEach(entryInput ->
+            clientPipeConnections.add(new ClientPipeConnection(
+                    Direction.valueOf(entryInput.getStringOr("side", "EAST")),
+                    PipeConnectionMode.valueOf(entryInput.getStringOr("mode", "PASSIVE"))
+            ))
+        );
+    }
+
     @Override
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
@@ -123,6 +180,7 @@ public class PipeBlockEntity extends BlockEntity {
             Optional<PipeConnection> connection = input.read(name, PipeConnection.CODEC);
             if (connection.isEmpty()) continue;
             ownedConnections.put(direction, connection.get());
+            if (networkView != null) networkView.invalidate();
         }
     }
 
@@ -156,21 +214,16 @@ public class PipeBlockEntity extends BlockEntity {
         super.setChanged();
 
         if (level instanceof ServerLevel serverLevel) {
-            PacketDistributor.sendToPlayersTrackingChunk(serverLevel,
+            Packet<?> packet = getUpdatePacket();
+            for (ServerPlayer player : serverLevel.getChunkSource().chunkMap.getPlayers(new ChunkPos(getBlockPos()), false)) {
+                player.connection.send(packet);
+            }
+
+
+            /*PacketDistributor.sendToPlayersTrackingChunk(serverLevel,
                     new ChunkPos(getBlockPos()),
-                    new PipeSyncPayload(level.dimension(), getBlockPos(),
-                            ownedConnections.values().stream()
-                                    .map(connection -> new ClientPipeConnection(connection.getSide(), connection.getMode())).toList()
-                    )
-            );
+                    createClientPayload()
+            );*/
         }
-    }
-
-    public boolean trySetConnectionMode(Direction direction, PipeConnectionMode mode) {
-        if (!ownedConnections.containsKey(direction))
-            return false;
-
-        ownedConnections.get(direction).setMode(mode);
-        return true;
     }
 }

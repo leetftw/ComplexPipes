@@ -13,6 +13,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.item.ItemStack;
@@ -35,7 +36,7 @@ public class PipeConnection {
                     Codec.STRING.fieldOf("mode").forGetter(a -> a.getMode().name()),
                     Codec.INT.fieldOf("priority").forGetter(PipeConnection::getPriority),
                     Codec.INT.fieldOf("ratio").forGetter(PipeConnection::getRatio),
-                    Codec.STRING.fieldOf("routingStrategy").forGetter(a -> a.getRoutingStrategy().getId()),
+                    CompoundTag.CODEC.fieldOf("routingStrategy").forGetter(a -> a.getRoutingStrategy().serialize()),
                     Codec.INT.fieldOf("tickCount").forGetter(a -> a.tickCount),
                     Codec.list(Codec.pair(Codec.intRange(0, MAX_UPGRADES - 1).fieldOf("slot").codec(), PipeUpgrade.CODEC.fieldOf("upgrade").codec())).fieldOf("upgrades").forGetter(a -> {
                         List<Pair<Integer, PipeUpgrade>> pairs = new ArrayList<>();
@@ -48,7 +49,7 @@ public class PipeConnection {
     );
 
     private BlockPos pipePos;
-    private final Direction side;
+    private Direction side;
 
     private PipeConnectionMode mode = PipeConnectionMode.PASSIVE;
     private int priority = 0;
@@ -56,7 +57,7 @@ public class PipeConnection {
     private BaseRoutingStrategy routingStrategy = new DefaultRoutingStrategy();
     private final PipeUpgrade[] pipeUpgrades = new PipeUpgrade[MAX_UPGRADES];
     private int tickCount = 0;
-    private final PipeType<?> TYPE;
+    private PipeType<?> TYPE;
 
     private Predicate<Object> predicate;
 
@@ -68,7 +69,7 @@ public class PipeConnection {
         this.TYPE = type;
     }
 
-    private PipeConnection(String type, BlockPos pos, Direction side, String mode, int priority, int ratio, String routingStrategy, int tickCount, List<Pair<Integer, PipeUpgrade>> upgrades) {
+    private PipeConnection(String type, BlockPos pos, Direction side, String mode, int priority, int ratio, CompoundTag routingStrategy, int tickCount, List<Pair<Integer, PipeUpgrade>> upgrades) {
         this.pipePos = pos;
         this.side = side;
         this.mode = PipeConnectionMode.valueOf(mode);
@@ -86,9 +87,16 @@ public class PipeConnection {
         return pipePos;
     }
 
-    public PipeConnection overwritePipePos(BlockPos newPos) {
+    public void overwritePipePos(BlockPos newPos) {
         this.pipePos = newPos;
-        return this;
+    }
+
+    public void overwriteSide(Direction value) {
+        this.side = value;
+    }
+
+    public void overwriteType(PipeType<?> pipeType) {
+        this.TYPE = pipeType;
     }
 
     public Direction getSide() {
@@ -236,8 +244,12 @@ public class PipeConnection {
         }
 
         switch (routingStrategy.getId()) {
+            case "ratio":
+                ItemStack ratioCard = new ItemStack(ItemRegistry.RATIO_ROUTER.get(), 1);
+                items.add(ratioCard);
+                break;
             case "round_robin":
-                ItemStack roundRobinCard = new ItemStack(ItemRegistry.ROUND_ROBIN_CARD.get(), 1);
+                ItemStack roundRobinCard = new ItemStack(ItemRegistry.ROUND_ROBIN_ROUTER.get(), 1);
                 items.add(roundRobinCard);
                 break;
             case "default":
@@ -325,41 +337,52 @@ public class PipeConnection {
                 targetRatios
         );
 
-        for (int j = priorities.length - 1; j >= 0 && totalTransferred < transferRate; j--) {
-            int priority = priorities[j];
-            List<Tuple<PipeConnection, T>> targets = prioritizedTargets.get(priority);
+        // Transactionally move the items
+        try (Transaction transaction = Transaction.openRoot()) {
+            for (int j = priorities.length - 1; j >= 0 && totalTransferred < transferRate; j--) {
+                int priority = priorities[j];
+                List<Tuple<PipeConnection, T>> targets = prioritizedTargets.get(priority);
 
-            // Get the handlers and the filters for the pipe connections
-            for (Tuple<PipeConnection, T> tuple : targets) {
-                targetHandlers.add(tuple.getB());
-                Predicate<Object> targetFilter = useFilters ? tuple.getA().computePredicate() : alwaysTrue;
-                targetFilters.add(targetFilter);
-                targetRatios.add(tuple.getA().getRatio());
-            }
+                // Get the handlers and the filters for the pipe connections
+                for (Tuple<PipeConnection, T> tuple : targets) {
+                    targetHandlers.add(tuple.getB());
+                    Predicate<Object> targetFilter = useFilters ? tuple.getA().computePredicate() : alwaysTrue;
+                    targetFilters.add(targetFilter);
+                    targetRatios.add(tuple.getA().getRatio());
+                }
 
-            // Transactionally move the items
-            try (Transaction transaction = Transaction.openRoot()) {
                 if (mode == PipeConnectionMode.EXTRACT) {
                     totalTransferred += routingStrategy.routeExtract(
                             transaction, type.getHandlerWrapper(),
                             base, baseFilter,
-                            targetBatch,
+                            targetBatch, priority,
                             0, transferRate - totalTransferred);
                 } else {
                     totalTransferred += routingStrategy.routeInsert(
                             transaction, type.getHandlerWrapper(),
                             base, baseFilter,
-                            targetBatch,
+                            targetBatch, priority,
                             0, transferRate - totalTransferred);
                 }
-            } catch (IllegalStateException e) {
-                LOGGER.error("[PipeConnection] Could not open transaction for transferring items!", e);
+
+                // Clear lists for next iteration
+                targetHandlers.clear();
+                targetFilters.clear();
+                targetRatios.clear();
             }
 
-            // Clear lists for next iteration
-            targetHandlers.clear();
-            targetFilters.clear();
-            targetRatios.clear();
+            if (totalTransferred > transferRate || totalTransferred < 0) {
+                LOGGER.error("[PipeConnection] Attempt to transfer amount of resources outside of range!");
+            } else {
+                transaction.commit();
+            }
+            transaction.close();
+        } catch (IllegalStateException e) {
+            LOGGER.error("[PipeConnection] Could not open transaction for transferring items!", e);
         }
+    }
+
+    public PipeType<?> getType() {
+        return TYPE;
     }
 }

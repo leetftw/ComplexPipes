@@ -6,4 +6,5 @@ import java.util.function.Predicate;
 
 public interface PipeHandlerWrapper<T> {
     int move(T from, T to, int amount, Predicate<Object> filter, TransactionContext transaction);
+    int getCount(T handler, Predicate<Object> filter);
 }

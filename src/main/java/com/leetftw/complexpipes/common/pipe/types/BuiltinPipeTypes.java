@@ -13,8 +13,10 @@ import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.energy.EnergyHandlerUtil;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 import static com.leetftw.complexpipes.common.ComplexPipes.MODID;
 
@@ -35,7 +37,23 @@ public class BuiltinPipeTypes {
         @Override
         public PipeHandlerWrapper<ResourceHandler<ItemResource>> getHandlerWrapper() {
             if (wrapper == null) {
-                wrapper = (from, to, amount, filter, transaction) -> ResourceHandlerUtil.move(from, to, filter::test, amount, transaction);
+                wrapper = new PipeHandlerWrapper<>() {
+                    @Override
+                    public int move(ResourceHandler<ItemResource> from, ResourceHandler<ItemResource> to, int amount, Predicate<Object> filter, TransactionContext transaction) {
+                        return ResourceHandlerUtil.move(from, to, filter::test, amount, transaction);
+                    }
+
+                    @Override
+                    public int getCount(ResourceHandler<ItemResource> handler, Predicate<Object> filter) {
+                        int totalCount = 0;
+                        for (int i = 0; i < handler.size(); i++) {
+                            if (filter.test(handler.getResource(i))) {
+                                totalCount += handler.getAmountAsInt(i);
+                            }
+                        }
+                        return totalCount;
+                    }
+                };
             }
             return wrapper;
         }
@@ -77,7 +95,23 @@ public class BuiltinPipeTypes {
         @Override
         public PipeHandlerWrapper<ResourceHandler<FluidResource>> getHandlerWrapper() {
             if (wrapper == null) {
-                wrapper = (from, to, amount, filter, transaction) -> ResourceHandlerUtil.move(from, to, filter::test, amount, transaction);
+                wrapper = new PipeHandlerWrapper<>() {
+                    @Override
+                    public int move(ResourceHandler<FluidResource> from, ResourceHandler<FluidResource> to, int amount, Predicate<Object> filter, TransactionContext transaction) {
+                        return ResourceHandlerUtil.move(from, to, filter::test, amount, transaction);
+                    }
+
+                    @Override
+                    public int getCount(ResourceHandler<FluidResource> handler, Predicate<Object> filter) {
+                        int totalCount = 0;
+                        for (int i = 0; i < handler.size(); i++) {
+                            if (filter.test(handler.getResource(i))) {
+                                totalCount += handler.getAmountAsInt(i);
+                            }
+                        }
+                        return totalCount;
+                    }
+                };
             }
             return wrapper;
         }
@@ -118,7 +152,17 @@ public class BuiltinPipeTypes {
         @Override
         public PipeHandlerWrapper<EnergyHandler> getHandlerWrapper() {
             if (wrapper == null) {
-                wrapper = (from, to, amount, filter, transaction) -> EnergyHandlerUtil.move(from, to, amount, transaction);
+                wrapper = new PipeHandlerWrapper<>() {
+                    @Override
+                    public int move(EnergyHandler from, EnergyHandler to, int amount, Predicate<Object> filter, TransactionContext transaction) {
+                        return EnergyHandlerUtil.move(from, to, amount, transaction);
+                    }
+
+                    @Override
+                    public int getCount(EnergyHandler handler, Predicate<Object> filter) {
+                        return handler.getAmountAsInt();
+                    }
+                };
             }
             return wrapper;
         }

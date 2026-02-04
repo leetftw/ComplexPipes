@@ -1,18 +1,21 @@
 package com.leetftw.complexpipes.common.util.routing;
 
 import com.leetftw.complexpipes.common.util.PipeHandlerWrapper;
+import net.minecraft.nbt.CompoundTag;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class RoundRobinRoutingStrategy extends BaseRoutingStrategy {
     int previousConnectionCount = -1;
+    int previousPriority = Integer.MAX_VALUE;
     int insertionIndex = 0;
 
     @Override
-    protected <T> int route(Transaction transaction, PipeHandlerWrapper<T> handlerWrapper, T base, Predicate<Object> baseFilter, TargetBatch<T> targets, int minTransfer, int maxTransfer, TransferFunction transferFunction) {
+    protected <T> int route(Transaction transaction, PipeHandlerWrapper<T> handlerWrapper, T base, Predicate<Object> baseFilter, TargetBatch<T> targets, int priorityLevel, int minTransfer, int maxTransfer, TransferFunction transferFunction) {
         List<T> handlers = targets.handlers();
 
         // Reset when size of list changes
@@ -41,7 +44,12 @@ public class RoundRobinRoutingStrategy extends BaseRoutingStrategy {
         //  Cycle: 3-4
         //  Alternative cycle when both 3 and 4 do not accept: 1-2
 
-        // TODO: Check validity of this loop
+        // Current problems:
+        // - states are not persistent (i.e. not saved)
+        // - this function gets called for every priority group, but does not accomodate states per priority group
+        // - validity of this loop is not fully worked out
+        // - transaction provided should not be closed, instead a subtransaction should be made
+
         List<Predicate<Object>> filters = targets.filters();
         int amountTransferred = 0;
         int currentIndex = insertionIndex;
@@ -75,5 +83,26 @@ public class RoundRobinRoutingStrategy extends BaseRoutingStrategy {
     @Override
     public String getId() {
         return "round_robin";
+    }
+
+    @Override
+    protected void saveAdditional(CompoundTag data) {
+        data.putInt("previous_count", previousConnectionCount);
+        data.putInt("previous_priority", previousPriority);
+        data.putInt("insertion_index", insertionIndex);
+    }
+
+    public static BaseRoutingStrategy create(CompoundTag data) {
+        RoundRobinRoutingStrategy strategy = new RoundRobinRoutingStrategy();
+        Optional<Integer> previousCountOpt = data.getInt("previous_count");
+        previousCountOpt.ifPresent(integer -> strategy.previousConnectionCount = integer);
+
+        Optional<Integer> previousPriorityOpt = data.getInt("previous_priority");
+        previousPriorityOpt.ifPresent(integer -> strategy.previousPriority = integer);
+
+        Optional<Integer> insertIndexOpt = data.getInt("insertion_index");
+        insertIndexOpt.ifPresent(integer -> strategy.insertionIndex = integer);
+
+        return strategy;
     }
 }

@@ -20,5 +20,6 @@ public class ItemRegistry {
 
     public static final DeferredItem<Item> EXTRACTION_CARD = ITEMS.registerItem("extraction_card", PipeCardItem::new);
     public static final DeferredItem<Item> INSERTION_CARD = ITEMS.registerItem("insertion_card", PipeCardItem::new);
-    public static final DeferredItem<Item> ROUND_ROBIN_CARD = ITEMS.registerItem("round_robin_card", PipeCardItem::new);
+    public static final DeferredItem<Item> ROUND_ROBIN_ROUTER = ITEMS.registerItem("round_robin_router", PipeCardItem::new);
+    public static final DeferredItem<Item> RATIO_ROUTER = ITEMS.registerItem("ratio_router", PipeCardItem::new);
 }

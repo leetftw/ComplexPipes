@@ -1,5 +1,6 @@
 package com.leetftw.complexpipes.common.blocks;
 
+import com.leetftw.complexpipes.client.ClientConfig;
 import com.leetftw.complexpipes.common.ComplexPipes;
 import com.leetftw.complexpipes.common.gui.PipeConnectionMenu;
 import com.leetftw.complexpipes.common.items.ItemComponentRegistry;
@@ -10,6 +11,7 @@ import com.leetftw.complexpipes.common.pipe.network.PipeConnection;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnectionMode;
 import com.leetftw.complexpipes.common.pipe.network.PipeNetworkView;
 import com.leetftw.complexpipes.common.pipe.types.PipeType;
+import com.leetftw.complexpipes.common.util.routing.RatioRoutingStrategy;
 import com.leetftw.complexpipes.common.util.routing.RoundRobinRoutingStrategy;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -18,7 +20,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -33,7 +34,6 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -65,13 +65,11 @@ public class PipeBlock extends Block implements EntityBlock
             Direction.DOWN, DOWN_CON
     );
 
-    //public final BlockCapability<ResourceHandler<T>, Direction> CAPABILITY;
     public final PipeType<?> TYPE;
 
     public PipeBlock(Properties properties, PipeType<?> pipeType)
     {
         super(properties);
-        //CAPABILITY = capability;
         TYPE = pipeType;
 
         registerDefaultState(defaultBlockState()
@@ -111,8 +109,7 @@ public class PipeBlock extends Block implements EntityBlock
 
     @Override
     protected RenderShape getRenderShape(BlockState state) {
-        // TODO: Use a BlockEntityRenderer because the multipart model is straining chunk mesh updates
-        return RenderShape.MODEL;
+        return ClientConfig.RENDER_PIPE_BE.get() ? RenderShape.INVISIBLE : RenderShape.MODEL;
     }
 
     @Override
@@ -137,7 +134,7 @@ public class PipeBlock extends Block implements EntityBlock
             // Get the neighbour block
             BlockPos neighbourPos = pos.relative(direction);
             BlockState neighbor = level.getBlockState(neighbourPos);
-            boolean isNeighbour = neighbor.getBlock().getClass() == this.getClass();
+            boolean isNeighbour = neighbor.getBlock().equals(this);
             boolean sideConnected =  level.getCapability(TYPE.getBlockCapability(), neighbourPos, direction.getOpposite()) != null;
             isNeighbour |= sideConnected;
             connection |= sideConnected;
@@ -216,8 +213,8 @@ public class PipeBlock extends Block implements EntityBlock
                     if (connection.isEmpty()) return;
 
                     player.openMenu(new SimpleMenuProvider(
-                            (containerId, playerInventory, player1) -> new PipeConnectionMenu(containerId, playerInventory, connection.get(), TYPE),
-                            Component.literal("Pipe Upgrades")
+                            (containerId, playerInventory, player1) -> new PipeConnectionMenu(containerId, playerInventory, connection.get(), TYPE, level.dimension()),
+                            state.getBlock().getName()
                     ));
                 }
             }
@@ -255,8 +252,12 @@ public class PipeBlock extends Block implements EntityBlock
             // For cards: try setting modes
             boolean added = false;
             if (stack.getItem() instanceof PipeUpgradeItem) added = connectionOptional.get().tryAddUpgrade(stack.get(ItemComponentRegistry.PIPE_UPGRADE));
-            else if (stack.is(ItemRegistry.ROUND_ROBIN_CARD)) {
+            else if (stack.is(ItemRegistry.ROUND_ROBIN_ROUTER)) {
                 connectionOptional.get().setRoutingStrategy(new RoundRobinRoutingStrategy());
+                added = true;
+            }
+            else if (stack.is(ItemRegistry.RATIO_ROUTER)) {
+                connectionOptional.get().setRoutingStrategy(new RatioRoutingStrategy());
                 added = true;
             }
             else if (stack.is(ItemRegistry.EXTRACTION_CARD)) {

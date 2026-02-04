@@ -1,5 +1,7 @@
 package com.leetftw.complexpipes.client.render.block_entity;
 
+import com.leetftw.complexpipes.client.ClientConfig;
+import com.leetftw.complexpipes.common.ServerConfig;
 import com.leetftw.complexpipes.common.blocks.PipeBlockEntity;
 import com.leetftw.complexpipes.common.pipe.network.ClientPipeConnection;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnectionMode;
@@ -9,6 +11,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.renderer.MaterialMapper;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.block.model.BlockModelPart;
+import net.minecraft.client.renderer.block.model.BlockStateModel;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
@@ -18,10 +22,15 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.Material;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity, PipeRenderState> {
     public PipeRenderer(BlockEntityRendererProvider.Context context) {
@@ -44,6 +53,15 @@ public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity, PipeRe
     @Override
     public void submit(PipeRenderState renderState, PoseStack poseStack, @NonNull SubmitNodeCollector nodeCollector, @NonNull CameraRenderState cameraRenderState) {
         int overlay = OverlayTexture.NO_OVERLAY;
+
+        if (ClientConfig.RENDER_PIPE_BE.get()) {
+            BlockStateModel model = Minecraft.getInstance().getBlockRenderer().getBlockModel(renderState.blockState);
+
+            nodeCollector.submitBlockModel(poseStack, RenderTypes.entityCutout(TextureAtlas.LOCATION_BLOCKS), model, 0, 0, 0, renderState.lightCoords, OverlayTexture.NO_OVERLAY, 0);
+
+            // Draw pipe
+        }
+
         poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);
 
