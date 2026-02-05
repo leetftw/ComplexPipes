@@ -5,7 +5,7 @@ import com.leetftw.complexpipes.common.items.ItemComponentRegistry;
 import com.leetftw.complexpipes.common.items.creative.CreativeModeTabRegistry;
 import com.leetftw.complexpipes.common.network.PipeScreenNumericSyncPayload;
 import com.leetftw.complexpipes.common.pipe.types.PipeTypeRegistry;
-import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgradeRegistry;
+import com.leetftw.complexpipes.common.cards.PipeCardRegistry;
 import com.leetftw.complexpipes.common.tests.GameRuleRegistry;
 import com.leetftw.complexpipes.common.tests.GameTestRegistry;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -45,7 +45,7 @@ public class ComplexPipes {
 
         // Register custom registries
         PipeTypeRegistry.register(modEventBus);
-        PipeUpgradeRegistry.register(modEventBus);
+        PipeCardRegistry.register(modEventBus);
 
         // Register network packets
         modEventBus.addListener(ComplexPipes::registerPayloads);

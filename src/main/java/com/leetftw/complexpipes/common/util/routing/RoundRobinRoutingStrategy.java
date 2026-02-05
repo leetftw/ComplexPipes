@@ -92,17 +92,15 @@ public class RoundRobinRoutingStrategy extends BaseRoutingStrategy {
         data.putInt("insertion_index", insertionIndex);
     }
 
-    public static BaseRoutingStrategy create(CompoundTag data) {
-        RoundRobinRoutingStrategy strategy = new RoundRobinRoutingStrategy();
+    @Override
+    protected void loadAdditional(CompoundTag data) {
         Optional<Integer> previousCountOpt = data.getInt("previous_count");
-        previousCountOpt.ifPresent(integer -> strategy.previousConnectionCount = integer);
+        previousCountOpt.ifPresent(integer -> previousConnectionCount = integer);
 
         Optional<Integer> previousPriorityOpt = data.getInt("previous_priority");
-        previousPriorityOpt.ifPresent(integer -> strategy.previousPriority = integer);
+        previousPriorityOpt.ifPresent(integer -> previousPriority = integer);
 
         Optional<Integer> insertIndexOpt = data.getInt("insertion_index");
-        insertIndexOpt.ifPresent(integer -> strategy.insertionIndex = integer);
-
-        return strategy;
+        insertIndexOpt.ifPresent(integer -> insertionIndex = integer);
     }
 }

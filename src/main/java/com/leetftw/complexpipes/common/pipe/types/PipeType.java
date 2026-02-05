@@ -2,7 +2,7 @@ package com.leetftw.complexpipes.common.pipe.types;
 
 import com.leetftw.complexpipes.common.blocks.PipeBlock;
 import com.leetftw.complexpipes.common.blocks.PipeBlockEntity;
-import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgradeType;
+import com.leetftw.complexpipes.common.cards.PipeCardType;
 import com.leetftw.complexpipes.common.util.PipeHandlerWrapper;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
@@ -32,7 +32,7 @@ public abstract class PipeType<T> {
     public abstract int getDefaultTransferAmount();
     public abstract int getDefaultTransferSpeed();
     public abstract Identifier getTexturePath();
-    public abstract boolean supportsUpgrade(PipeUpgradeType upgradeType);
+    public abstract boolean supportsCard(PipeCardType upgradeType);
 
     final void setRegisteredId(@NotNull String id) {
         this.id = id;

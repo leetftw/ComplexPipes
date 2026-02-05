@@ -1,12 +1,10 @@
-package com.leetftw.complexpipes.common.pipe.upgrades.builtin;
+package com.leetftw.complexpipes.common.cards.builtin.upgrade;
 
 import com.leetftw.complexpipes.common.ServerConfig;
-import com.leetftw.complexpipes.common.pipe.upgrades.BuiltinPipeUpgrades;
-import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgrade;
-import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgradeType;
+import com.leetftw.complexpipes.common.cards.BuiltinPipeCards;
+import com.leetftw.complexpipes.common.cards.PipeUpgrade;
+import com.leetftw.complexpipes.common.cards.PipeCardType;
 import com.mojang.serialization.MapCodec;
-
-import java.util.function.Predicate;
 
 /// Increases the stack size transferred per pipe operation
 public class StackPipeUpgrade extends PipeUpgrade {
@@ -14,8 +12,8 @@ public class StackPipeUpgrade extends PipeUpgrade {
     public static final MapCodec<StackPipeUpgrade> CODEC = MapCodec.unit(INSTANCE);
 
     @Override
-    public PipeUpgradeType getType() {
-        return BuiltinPipeUpgrades.STACK_UPGRADE;
+    public PipeCardType getType() {
+        return BuiltinPipeCards.STACK_UPGRADE;
     }
 
     @Override

@@ -1,11 +1,9 @@
-package com.leetftw.complexpipes.common.pipe.upgrades.builtin;
+package com.leetftw.complexpipes.common.cards.builtin.upgrade;
 
-import com.leetftw.complexpipes.common.pipe.upgrades.BuiltinPipeUpgrades;
-import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgrade;
-import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgradeType;
+import com.leetftw.complexpipes.common.cards.BuiltinPipeCards;
+import com.leetftw.complexpipes.common.cards.PipeUpgrade;
+import com.leetftw.complexpipes.common.cards.PipeCardType;
 import com.mojang.serialization.MapCodec;
-
-import java.util.function.Predicate;
 
 /// Increases the stack size transferred per pipe operation for energy pipes
 public class EnergyPipeUpgrade extends PipeUpgrade {
@@ -13,8 +11,8 @@ public class EnergyPipeUpgrade extends PipeUpgrade {
     public static final MapCodec<EnergyPipeUpgrade> CODEC = MapCodec.unit(INSTANCE);
 
     @Override
-    public PipeUpgradeType getType() {
-        return BuiltinPipeUpgrades.ENERGY_UPGRADE;
+    public PipeCardType getType() {
+        return BuiltinPipeCards.ENERGY_UPGRADE;
     }
 
     @Override

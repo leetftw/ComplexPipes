@@ -72,17 +72,25 @@ public abstract class BaseRoutingStrategy {
         tag.put("data", dataTag);
         return tag;
     }
+
+    protected void loadAdditional(CompoundTag data) {
+
+    }
+
     public abstract String getId();
 
-    public static BaseRoutingStrategy create(CompoundTag tag) {
-        String id = tag.getStringOr("id", "default");
+    public static BaseRoutingStrategy create(String id) {
         return switch (id) {
-            case "round_robin" -> {
-                Optional<CompoundTag> data = tag.getCompound("data");
-                yield data.map(RoundRobinRoutingStrategy::create).orElseGet(RoundRobinRoutingStrategy::new);
-            }
+            case "round_robin" -> new RoundRobinRoutingStrategy();
             case "ratio" -> new RatioRoutingStrategy();
             default -> new DefaultRoutingStrategy();
         };
+    }
+    public static BaseRoutingStrategy create(CompoundTag tag) {
+        String id = tag.getStringOr("id", "default");
+        BaseRoutingStrategy strategy = create(id);
+        Optional<CompoundTag> data = tag.getCompound("data");
+        data.ifPresent(strategy::loadAdditional);
+        return strategy;
     }
 }

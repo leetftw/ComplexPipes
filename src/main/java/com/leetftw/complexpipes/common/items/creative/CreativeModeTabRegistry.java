@@ -2,7 +2,7 @@ package com.leetftw.complexpipes.common.items.creative;
 
 import com.leetftw.complexpipes.common.items.ItemRegistry;
 import com.leetftw.complexpipes.common.pipe.types.PipeTypeRegistry;
-import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgradeRegistry;
+import com.leetftw.complexpipes.common.cards.PipeCardRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
@@ -22,7 +22,7 @@ public class CreativeModeTabRegistry {
 
     private static void addCreativeItems(CreativeModeTab.ItemDisplayParameters parameters, CreativeModeTab.Output output) {
         PipeTypeRegistry.forEach(pipeType -> output.accept(pipeType.getBlock()));
-        PipeUpgradeRegistry.PIPE_UPGRADE_REGISTRY.forEach(pipeUpgrade -> output.accept(pipeUpgrade.getItem()));
+        PipeCardRegistry.PIPE_CARD_TYPE_REGISTRY.forEach(pipeUpgrade -> output.accept(pipeUpgrade.getItem()));
         ItemRegistry.ITEMS.getEntries().forEach(itemHolder -> output.accept(itemHolder.get()));
     }
 }

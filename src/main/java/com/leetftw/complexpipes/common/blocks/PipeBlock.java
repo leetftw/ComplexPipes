@@ -6,7 +6,6 @@ import com.leetftw.complexpipes.common.gui.PipeConnectionMenu;
 import com.leetftw.complexpipes.common.items.ItemComponentRegistry;
 import com.leetftw.complexpipes.common.items.ItemRegistry;
 import com.leetftw.complexpipes.common.items.PipeCardItem;
-import com.leetftw.complexpipes.common.items.PipeUpgradeItem;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnection;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnectionMode;
 import com.leetftw.complexpipes.common.pipe.network.PipeNetworkView;
@@ -207,6 +206,7 @@ public class PipeBlock extends Block implements EntityBlock
 
         performHitAction(pos, hitResult, (axis) -> {
             if (!level.isClientSide()) {
+                // TODO: If player is crouching and the connection is IMPORT/EXPORT then remove the import/export card
                 BlockEntity blockEntity = level.getBlockEntity(pos);
                 if (blockEntity instanceof PipeBlockEntity pipeBE) {
                     Optional<PipeConnection> connection = pipeBE.getConnectionForSide(axis);
@@ -251,16 +251,8 @@ public class PipeBlock extends Block implements EntityBlock
             // For upgrades: try adding upgrade
             // For cards: try setting modes
             boolean added = false;
-            if (stack.getItem() instanceof PipeUpgradeItem) added = connectionOptional.get().tryAddUpgrade(stack.get(ItemComponentRegistry.PIPE_UPGRADE));
-            else if (stack.is(ItemRegistry.ROUND_ROBIN_ROUTER)) {
-                connectionOptional.get().setRoutingStrategy(new RoundRobinRoutingStrategy());
-                added = true;
-            }
-            else if (stack.is(ItemRegistry.RATIO_ROUTER)) {
-                connectionOptional.get().setRoutingStrategy(new RatioRoutingStrategy());
-                added = true;
-            }
-            else if (stack.is(ItemRegistry.EXTRACTION_CARD)) {
+
+            if (stack.is(ItemRegistry.EXTRACTION_CARD)) {
                 PipeConnectionMode oldMode = connectionOptional.get().getMode();
                 if (oldMode != PipeConnectionMode.EXTRACT) {
                     added = oldMode != PipeConnectionMode.INSERT || player.getInventory().add(new ItemStack(ItemRegistry.INSERTION_CARD.get(), 1));
@@ -274,6 +266,7 @@ public class PipeBlock extends Block implements EntityBlock
                     if (added) connectionOptional.get().setMode(PipeConnectionMode.INSERT);
                 }
             }
+            else if (stack.getItem() instanceof PipeCardItem) added = connectionOptional.get().tryAddCard(stack.get(ItemComponentRegistry.PIPE_CARD_DATA));
 
             if (!added) return;
 

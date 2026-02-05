@@ -5,7 +5,7 @@ import com.leetftw.complexpipes.common.blocks.PipeBlock;
 import com.leetftw.complexpipes.common.items.ItemRegistry;
 import com.leetftw.complexpipes.common.pipe.types.PipeType;
 import com.leetftw.complexpipes.common.pipe.types.PipeTypeRegistry;
-import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgradeRegistry;
+import com.leetftw.complexpipes.common.cards.PipeCardRegistry;
 import com.mojang.math.Quadrant;
 import net.minecraft.client.data.models.*;
 import net.minecraft.client.data.models.blockstates.*;
@@ -113,7 +113,7 @@ public class PipeModelProvider extends ModelProvider
         @Override
         public void run()
         {
-            for (var upgrade : PipeUpgradeRegistry.PIPE_UPGRADE_REGISTRY.entrySet())
+            for (var upgrade : PipeCardRegistry.PIPE_CARD_TYPE_REGISTRY.entrySet())
                 generateFlatItem(upgrade.getValue().getItem(), ModelTemplates.FLAT_ITEM);
 
             generateFlatItem(ItemRegistry.DEBUG_ITEM.get(), ModelTemplates.FLAT_ITEM);

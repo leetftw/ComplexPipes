@@ -1,10 +1,11 @@
 package com.leetftw.complexpipes.common.gui;
 
+import com.leetftw.complexpipes.common.cards.PipeCard;
 import com.leetftw.complexpipes.common.items.ItemComponentRegistry;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnection;
-import com.leetftw.complexpipes.common.pipe.upgrades.BuiltinPipeUpgrades;
-import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgrade;
-import com.leetftw.complexpipes.common.pipe.upgrades.builtin.ItemStackPipeFilter;
+import com.leetftw.complexpipes.common.cards.BuiltinPipeCards;
+import com.leetftw.complexpipes.common.cards.PipeUpgrade;
+import com.leetftw.complexpipes.common.cards.builtin.ItemStackPipeFilter;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -28,7 +29,7 @@ public class ItemStackFilterMenu extends AbstractContainerMenu {
 
         @Override
         public int getContainerSize() {
-            return PipeConnection.MAX_UPGRADES;
+            return PipeConnection.MAX_CARDS;
         }
 
         @Override
@@ -49,7 +50,7 @@ public class ItemStackFilterMenu extends AbstractContainerMenu {
             if (amount <= 0) return ItemStack.EMPTY;
 
             filter.items[slot] = null;
-            stack.set(ItemComponentRegistry.PIPE_UPGRADE, filter);
+            stack.set(ItemComponentRegistry.PIPE_CARD_DATA, filter);
 
             return ItemStack.EMPTY;
         }
@@ -62,7 +63,7 @@ public class ItemStackFilterMenu extends AbstractContainerMenu {
         @Override
         public void setItem(int slot, @NonNull ItemStack stack2) {
             filter.items[slot] = ItemResource.of(stack2);
-            stack.set(ItemComponentRegistry.PIPE_UPGRADE, filter);
+            stack.set(ItemComponentRegistry.PIPE_CARD_DATA, filter);
         }
 
         @Override
@@ -79,7 +80,7 @@ public class ItemStackFilterMenu extends AbstractContainerMenu {
         public void clearContent() {
             for (int i = 0; i < ItemStackPipeFilter.SLOT_COUNT; i++)
                 filter.items[i] = null;
-            stack.set(ItemComponentRegistry.PIPE_UPGRADE, filter);
+            stack.set(ItemComponentRegistry.PIPE_CARD_DATA, filter);
         }
     };
 
@@ -107,14 +108,14 @@ public class ItemStackFilterMenu extends AbstractContainerMenu {
     public ItemStackFilterMenu(int containerId, Inventory playerInventory, ItemStack stack) {
         super(MenuRegistry.ITEM_STACK_FILTER_MENU.get(), containerId);
         if (stack == null) {
-            stack = new ItemStack(BuiltinPipeUpgrades.ITEM_STACK_FILTER.getItem(), 1);
-            stack.set(ItemComponentRegistry.PIPE_UPGRADE, new ItemStackPipeFilter());
+            stack = new ItemStack(BuiltinPipeCards.ITEM_STACK_FILTER.getItem(), 1);
+            stack.set(ItemComponentRegistry.PIPE_CARD_DATA, new ItemStackPipeFilter());
         }
 
         this.stack = stack;
 
-        PipeUpgrade upgrade = stack.get(ItemComponentRegistry.PIPE_UPGRADE);
-        if (upgrade instanceof ItemStackPipeFilter itemFilter) {
+        PipeCard card = stack.get(ItemComponentRegistry.PIPE_CARD_DATA);
+        if (card instanceof ItemStackPipeFilter itemFilter) {
             this.filter = itemFilter.clone();
         }
 

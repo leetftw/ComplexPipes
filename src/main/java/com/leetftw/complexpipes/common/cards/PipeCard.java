@@ -1,43 +1,40 @@
-package com.leetftw.complexpipes.common.pipe.upgrades;
+package com.leetftw.complexpipes.common.cards;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.Function;
-import java.util.function.Predicate;
 
-public abstract class PipeUpgrade {
+public abstract class PipeCard {
     // Thanks Commoble!
-    public static final Codec<MapCodec<? extends PipeUpgrade>> BASIC_CODEC = Identifier.CODEC.flatXmap(
+    public static final Codec<MapCodec<? extends PipeCard>> BASIC_CODEC = Identifier.CODEC.flatXmap(
             id -> {
-                var mapCodec = PipeUpgradeRegistry.PIPE_UPGRADE_REGISTRY.getValue(id);
+                var mapCodec = PipeCardRegistry.PIPE_CARD_TYPE_REGISTRY.getValue(id);
                 return mapCodec == null ? DataResult.error(() -> "Invalid upgrade identifier: " + id) : DataResult.success(mapCodec.getCodec());
             },
             mapCodec -> {
-                var id = PipeUpgradeRegistry.PIPE_UPGRADE_REGISTRY.filterElements(type -> type.getCodec() == mapCodec).listElementIds().map(ResourceKey::identifier).findFirst();
+                var id = PipeCardRegistry.PIPE_CARD_TYPE_REGISTRY.filterElements(type -> type.getCodec() == mapCodec).listElementIds().map(ResourceKey::identifier).findFirst();
                 return id.map(DataResult::success).orElseGet(() -> DataResult.error(() -> "Unregistered upgrade codec: " + mapCodec));
             }
     );
 
-    public static final Codec<PipeUpgrade> CODEC = BASIC_CODEC.dispatch(
+    public static final Codec<PipeCard> CODEC = BASIC_CODEC.dispatch(
             // first argument is BaseClass -> ThingType
             // but our ThingType is just MapCodec here
             // so we can use that abstract codec method we made earlier
-            PipeUpgrade::codec,
+            PipeCard::codec,
             // second argument is ThingType -> MapCodec
             // but our ThingType is already a MapCodec, so we can just do this
             Function.identity());
 
-    public abstract PipeUpgradeType getType();
+    public abstract int getMaxInstalledCount();
+    public abstract MapCodec<? extends PipeCard> codec();
 
-    public abstract int getMinTransferAmount();
-    public abstract int getMaxTransferAmount();
-
-    public abstract double getTransferIntervalMultiplier();
-    public abstract double getTransferAmountMultiplier();
+    public abstract PipeCardType getType();
 
     public boolean isFilter() {
         return false;
@@ -46,8 +43,9 @@ public abstract class PipeUpgrade {
         return true;
     }
 
-    public abstract int getMaxInstalledCount();
-    public abstract MapCodec<? extends PipeUpgrade> codec();
+    public @Nullable String getRoutingStrategyId() {
+        return null;
+    }
 
     @Override
     public abstract boolean equals(Object obj);

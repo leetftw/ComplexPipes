@@ -1,10 +1,12 @@
 package com.leetftw.complexpipes.common.pipe.network;
 
+import com.leetftw.complexpipes.common.cards.PipeCard;
+import com.leetftw.complexpipes.common.cards.PipeCardType;
 import com.leetftw.complexpipes.common.items.ItemComponentRegistry;
 import com.leetftw.complexpipes.common.items.ItemRegistry;
 import com.leetftw.complexpipes.common.pipe.types.PipeType;
 import com.leetftw.complexpipes.common.pipe.types.PipeTypeRegistry;
-import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgrade;
+import com.leetftw.complexpipes.common.cards.PipeUpgrade;
 import com.leetftw.complexpipes.common.tests.GameRuleRegistry;
 import com.leetftw.complexpipes.common.util.routing.BaseRoutingStrategy;
 import com.leetftw.complexpipes.common.util.routing.DefaultRoutingStrategy;
@@ -26,7 +28,7 @@ import java.util.stream.Stream;
 import static com.leetftw.complexpipes.common.ComplexPipes.LOGGER;
 
 public class PipeConnection {
-    public static final int MAX_UPGRADES = 6;
+    public static final int MAX_CARDS = 6;
 
     public static final Codec<PipeConnection> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
@@ -38,11 +40,11 @@ public class PipeConnection {
                     Codec.INT.fieldOf("ratio").forGetter(PipeConnection::getRatio),
                     CompoundTag.CODEC.fieldOf("routingStrategy").forGetter(a -> a.getRoutingStrategy().serialize()),
                     Codec.INT.fieldOf("tickCount").forGetter(a -> a.tickCount),
-                    Codec.list(Codec.pair(Codec.intRange(0, MAX_UPGRADES - 1).fieldOf("slot").codec(), PipeUpgrade.CODEC.fieldOf("upgrade").codec())).fieldOf("upgrades").forGetter(a -> {
-                        List<Pair<Integer, PipeUpgrade>> pairs = new ArrayList<>();
-                        for (int i = 0; i < MAX_UPGRADES; i++)
-                            if (a.pipeUpgrades[i] != null)
-                                pairs.add(new Pair<>(i, a.pipeUpgrades[i]));
+                    Codec.list(Codec.pair(Codec.intRange(0, MAX_CARDS - 1).fieldOf("slot").codec(), PipeUpgrade.CODEC.fieldOf("upgrade").codec())).fieldOf("upgrades").forGetter(a -> {
+                        List<Pair<Integer, PipeCard>> pairs = new ArrayList<>();
+                        for (int i = 0; i < MAX_CARDS; i++)
+                            if (a.pipeCards[i] != null)
+                                pairs.add(new Pair<>(i, a.pipeCards[i]));
                         return pairs;
                     })
             ).apply(instance, PipeConnection::new)
@@ -55,7 +57,7 @@ public class PipeConnection {
     private int priority = 0;
     private int ratio = 1;
     private BaseRoutingStrategy routingStrategy = new DefaultRoutingStrategy();
-    private final PipeUpgrade[] pipeUpgrades = new PipeUpgrade[MAX_UPGRADES];
+    private final PipeCard[] pipeCards = new PipeCard[MAX_CARDS];
     private int tickCount = 0;
     private PipeType<?> TYPE;
 
@@ -69,7 +71,7 @@ public class PipeConnection {
         this.TYPE = type;
     }
 
-    private PipeConnection(String type, BlockPos pos, Direction side, String mode, int priority, int ratio, CompoundTag routingStrategy, int tickCount, List<Pair<Integer, PipeUpgrade>> upgrades) {
+    private PipeConnection(String type, BlockPos pos, Direction side, String mode, int priority, int ratio, CompoundTag routingStrategy, int tickCount, List<Pair<Integer, PipeCard>> cards) {
         this.pipePos = pos;
         this.side = side;
         this.mode = PipeConnectionMode.valueOf(mode);
@@ -77,8 +79,8 @@ public class PipeConnection {
         this.ratio = ratio;
         this.routingStrategy = BaseRoutingStrategy.create(routingStrategy);
         this.tickCount = tickCount;
-        for (Pair<Integer, PipeUpgrade> storedUpgrade : upgrades)
-            this.pipeUpgrades[storedUpgrade.getFirst()] = storedUpgrade.getSecond();
+        for (Pair<Integer, PipeCard> storedCard : cards)
+            this.pipeCards[storedCard.getFirst()] = storedCard.getSecond();
         this.dirty = true;
         this.TYPE = PipeTypeRegistry.getType(type);
     }
@@ -119,72 +121,85 @@ public class PipeConnection {
         return routingStrategy;
     }
 
-    public PipeConnection setMode(PipeConnectionMode mode) {
+    public void setMode(PipeConnectionMode mode) {
         this.mode = mode;
         setDirty();
-        return this;
     }
 
-    public PipeConnection setPriority(int priority) {
+    public void setPriority(int priority) {
         this.priority = priority;
         setDirty();
-        return this;
     }
 
-    public PipeConnection setRatio(int ratio) {
+    public void setRatio(int ratio) {
         this.ratio = ratio;
         setDirty();
-        return this;
     }
 
-    public PipeConnection setRoutingStrategy(BaseRoutingStrategy routingStrategy) {
-        this.routingStrategy = routingStrategy;
-        setDirty();
-        return this;
+    public Stream<PipeCard> getCardStream() {
+        return Arrays.stream(pipeCards);
     }
 
-    public Stream<PipeUpgrade> getUpgradeStream() {
-        return Arrays.stream(pipeUpgrades);
+    public PipeCard getCardInSlot(int slot) {
+        return pipeCards[slot];
     }
 
-    public PipeUpgrade getUpgradeInSlot(int slot) {
-        return pipeUpgrades[slot];
-    }
-
-    public void setUpgradeInSlot(int slot, PipeUpgrade upgrade) {
-        pipeUpgrades[slot] = upgrade;
+    public void setCardInSlot(int slot, PipeCard card) {
+        pipeCards[slot] = card;
         setDirty();
     }
 
-    public PipeUpgrade removeUpgradeInSlot(int slot) {
-        PipeUpgrade upgrade = pipeUpgrades[slot];
-        pipeUpgrades[slot] = null;
+    private void findRoutingStrategy() {
+        String id = "default";
+        for (PipeCard card : pipeCards) {
+            String cardStrategy = card.getRoutingStrategyId();
+            if (cardStrategy != null) {
+                id = cardStrategy;
+                break;
+            }
+        }
+
+        if (!id.equals(routingStrategy.getId())) {
+            routingStrategy = BaseRoutingStrategy.create(id);
+        }
+    }
+
+    public PipeCard removeCardInSlot(int slot) {
+        PipeCard upgrade = pipeCards[slot];
+        pipeCards[slot] = null;
         setDirty();
+        if (upgrade.getRoutingStrategyId() != null) {
+            findRoutingStrategy();
+        }
         return upgrade;
     }
 
-    public boolean tryAddUpgrade(PipeUpgrade upgrade) {
-        // Max 6 upgrades
-        if (Arrays.stream(pipeUpgrades).filter(Objects::nonNull).count() == MAX_UPGRADES)
+    public boolean tryAddCard(PipeCard card) {
+        // Max 6 card
+        if (Arrays.stream(pipeCards).filter(Objects::nonNull).count() == MAX_CARDS)
             return false;
-        // Adding this upgrade should not exceed max upgrades for this type
-        if (upgrade.getMaxInstalledCount() == Arrays.stream(pipeUpgrades).filter(Objects::nonNull)
-                .filter(existingUpgrade -> existingUpgrade.getType() == upgrade.getType()).count())
+        // Adding this card should not exceed max upgrades for this type
+        if (card.getMaxInstalledCount() == Arrays.stream(pipeCards).filter(Objects::nonNull)
+                .filter(existingUpgrade -> existingUpgrade.getType() == card.getType()).count())
             return false;
-        // The upgrade should be supported by the pipe
-        if (!TYPE.supportsUpgrade(upgrade.getType()))
+        // The card should be supported by the pipe
+        if (!TYPE.supportsCard(card.getType()))
             return false;
+        // The card should be compatible with the other cards
+
 
         int firstEmptyIndex = -1;
-        for (int i = 0; i < MAX_UPGRADES; i++) {
-            if (pipeUpgrades[i] == null) {
+        for (int i = 0; i < MAX_CARDS; i++) {
+            if (pipeCards[i] == null) {
                 firstEmptyIndex = i;
                 break;
             }
         }
         if (firstEmptyIndex < 0) return false;
 
-        pipeUpgrades[firstEmptyIndex] = upgrade;
+        pipeCards[firstEmptyIndex] = card;
+        findRoutingStrategy();
+
         setDirty();
         return true;
     }
@@ -204,14 +219,18 @@ public class PipeConnection {
     }
 
     public int calculateTransferRate() {
-        return Arrays.stream(pipeUpgrades).filter(Objects::nonNull)
+        return Arrays.stream(pipeCards).filter(Objects::nonNull)
+                .filter(a -> a instanceof PipeUpgrade)
+                .map(a -> (PipeUpgrade) a)
                 .map(PipeUpgrade::getTransferAmountMultiplier)
                 .reduce((double) TYPE.getDefaultTransferAmount(), (a, b) -> a * b)
                 .intValue();
     }
 
     public long calculateOperationTime() {
-        return Long.max(1, Math.round(Arrays.stream(pipeUpgrades).filter(Objects::nonNull)
+        return Long.max(1, Math.round(Arrays.stream(pipeCards).filter(Objects::nonNull)
+                .filter(a -> a instanceof PipeUpgrade)
+                .map(a -> (PipeUpgrade) a)
                 .map(PipeUpgrade::getTransferIntervalMultiplier)
                 .reduce((double) TYPE.getDefaultTransferSpeed(), (a, b) -> a * b)));
     }
@@ -221,11 +240,11 @@ public class PipeConnection {
     }
 
     public void appendItems(List<ItemStack> items) {
-        for (PipeUpgrade upgrade : pipeUpgrades) {
-            if (upgrade == null) continue;
+        for (PipeCard card : pipeCards) {
+            if (card == null) continue;
 
-            ItemStack stack = new ItemStack(upgrade.getType().getItem(), 1);
-            stack.set(ItemComponentRegistry.PIPE_UPGRADE, upgrade);
+            ItemStack stack = new ItemStack(card.getType().getItem(), 1);
+            stack.set(ItemComponentRegistry.PIPE_CARD_DATA, card);
             items.add(stack);
         }
 
@@ -242,29 +261,15 @@ public class PipeConnection {
             default:
                 break;
         }
-
-        switch (routingStrategy.getId()) {
-            case "ratio":
-                ItemStack ratioCard = new ItemStack(ItemRegistry.RATIO_ROUTER.get(), 1);
-                items.add(ratioCard);
-                break;
-            case "round_robin":
-                ItemStack roundRobinCard = new ItemStack(ItemRegistry.ROUND_ROBIN_ROUTER.get(), 1);
-                items.add(roundRobinCard);
-                break;
-            case "default":
-            default:
-                break;
-        }
     }
 
     public Predicate<Object> computePredicate() {
         if (predicate == null) {
             predicate = object -> {
-                for (PipeUpgrade upgrade : pipeUpgrades) {
-                    if (upgrade == null)
+                for (PipeCard card : pipeCards) {
+                    if (card == null)
                         continue;
-                    if (upgrade.isFilter() && !upgrade.allowResourceTransfer(object))
+                    if (card.isFilter() && !card.allowResourceTransfer(object))
                         return false;
                 }
                 return true;
@@ -376,7 +381,6 @@ public class PipeConnection {
             } else {
                 transaction.commit();
             }
-            transaction.close();
         } catch (IllegalStateException e) {
             LOGGER.error("[PipeConnection] Could not open transaction for transferring items!", e);
         }

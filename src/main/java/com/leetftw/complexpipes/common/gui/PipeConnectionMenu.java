@@ -1,17 +1,15 @@
 package com.leetftw.complexpipes.common.gui;
 
+import com.leetftw.complexpipes.common.cards.PipeCard;
 import com.leetftw.complexpipes.common.items.ItemComponentRegistry;
-import com.leetftw.complexpipes.common.items.PipeUpgradeItem;
+import com.leetftw.complexpipes.common.items.ItemRegistry;
+import com.leetftw.complexpipes.common.items.PipeCardItem;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnection;
 import com.leetftw.complexpipes.common.pipe.types.PipeTypeRegistry;
-import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgrade;
+import com.leetftw.complexpipes.common.cards.PipeUpgrade;
 import com.leetftw.complexpipes.common.pipe.types.PipeType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.data.registries.VanillaRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
@@ -27,7 +25,7 @@ public class PipeConnectionMenu extends AbstractContainerMenu {
     private final PipeConnection pipeConnection;
     private ResourceKey<Level> dimension;
 
-    private final Container upgradeContainer = new Container() {
+    private final Container cardContainer = new Container() {
         @Override
         public int getMaxStackSize() {
             return 1;
@@ -35,21 +33,21 @@ public class PipeConnectionMenu extends AbstractContainerMenu {
 
         @Override
         public int getContainerSize() {
-            return PipeConnection.MAX_UPGRADES;
+            return PipeConnection.MAX_CARDS;
         }
 
         @Override
         public boolean isEmpty() {
-            return pipeConnection.getUpgradeStream().noneMatch(Objects::nonNull);
+            return pipeConnection.getCardStream().noneMatch(Objects::nonNull);
         }
 
         @Override
         public @NonNull ItemStack getItem(int slot) {
-            PipeUpgrade upgrade = pipeConnection.getUpgradeInSlot(slot);
-            if (upgrade == null) return ItemStack.EMPTY;
+            PipeCard card = pipeConnection.getCardInSlot(slot);
+            if (card == null) return ItemStack.EMPTY;
 
-            ItemStack stack = new ItemStack(upgrade.getType().getItem(), 1);
-            stack.set(ItemComponentRegistry.PIPE_UPGRADE, upgrade);
+            ItemStack stack = new ItemStack(card.getType().getItem(), 1);
+            stack.set(ItemComponentRegistry.PIPE_CARD_DATA, card);
 
             return stack;
         }
@@ -62,13 +60,13 @@ public class PipeConnectionMenu extends AbstractContainerMenu {
             if (amount > 1)
                 return ItemStack.EMPTY;
 
-            PipeUpgrade upgrade = pipeConnection.getUpgradeInSlot(slot);
-            if (upgrade == null) return ItemStack.EMPTY;
+            PipeCard card = pipeConnection.getCardInSlot(slot);
+            if (card == null) return ItemStack.EMPTY;
 
-            ItemStack stack = new ItemStack(upgrade.getType().getItem(), 1);
-            stack.set(ItemComponentRegistry.PIPE_UPGRADE, upgrade);
+            ItemStack stack = new ItemStack(card.getType().getItem(), 1);
+            stack.set(ItemComponentRegistry.PIPE_CARD_DATA, card);
 
-            pipeConnection.removeUpgradeInSlot(slot);
+            pipeConnection.removeCardInSlot(slot);
             return stack;
         }
 
@@ -85,10 +83,13 @@ public class PipeConnectionMenu extends AbstractContainerMenu {
             if (stack.getCount() > 1)
                 return;
 
-            if (!(stack.getItem() instanceof PipeUpgradeItem))
+            if (!(stack.getItem() instanceof PipeCardItem))
                 return;
 
-            pipeConnection.setUpgradeInSlot(slot, stack.get(ItemComponentRegistry.PIPE_UPGRADE));
+            if (stack.is(ItemRegistry.EXTRACTION_CARD) || stack.is(ItemRegistry.INSERTION_CARD))
+                return;
+
+            pipeConnection.setCardInSlot(slot, stack.get(ItemComponentRegistry.PIPE_CARD_DATA));
         }
 
         @Override
@@ -103,8 +104,8 @@ public class PipeConnectionMenu extends AbstractContainerMenu {
 
         @Override
         public void clearContent() {
-            for (int i = 0; i < PipeConnection.MAX_UPGRADES; i++)
-                pipeConnection.removeUpgradeInSlot(i);
+            for (int i = 0; i < PipeConnection.MAX_CARDS; i++)
+                pipeConnection.removeCardInSlot(i);
         }
     };
 
@@ -120,8 +121,8 @@ public class PipeConnectionMenu extends AbstractContainerMenu {
         pipeConnection = connection;
         dimension = dim;
 
-        for (int i = 0; i < PipeConnection.MAX_UPGRADES; i++) {
-            addSlot(new Slot(upgradeContainer, i, 8 + (18 * i), 18) {
+        for (int i = 0; i < PipeConnection.MAX_CARDS; i++) {
+            addSlot(new Slot(cardContainer, i, 8 + (18 * i), 18) {
                 @Override
                 public boolean isActive() {
                     return true;

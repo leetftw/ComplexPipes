@@ -1,7 +1,7 @@
 package com.leetftw.complexpipes.common.pipe.types;
 
-import com.leetftw.complexpipes.common.pipe.upgrades.BuiltinPipeUpgrades;
-import com.leetftw.complexpipes.common.pipe.upgrades.PipeUpgradeType;
+import com.leetftw.complexpipes.common.cards.BuiltinPipeCards;
+import com.leetftw.complexpipes.common.cards.PipeCardType;
 import com.leetftw.complexpipes.common.util.PipeHandlerWrapper;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
@@ -23,10 +23,10 @@ import static com.leetftw.complexpipes.common.ComplexPipes.MODID;
 public class BuiltinPipeTypes {
     static final PipeType<ResourceHandler<ItemResource>> ITEM_PIPE = new PipeType<>() {
         private PipeHandlerWrapper<ResourceHandler<ItemResource>> wrapper = null;
-        private final List<PipeUpgradeType> supportedUpgrades = List.of(
-                BuiltinPipeUpgrades.SPEED_UPGRADE,
-                BuiltinPipeUpgrades.STACK_UPGRADE,
-                BuiltinPipeUpgrades.ITEM_STACK_FILTER
+        private final List<PipeCardType> supportedUpgrades = List.of(
+                BuiltinPipeCards.SPEED_UPGRADE,
+                BuiltinPipeCards.STACK_UPGRADE,
+                BuiltinPipeCards.ITEM_STACK_FILTER
         );
 
         @Override
@@ -75,16 +75,16 @@ public class BuiltinPipeTypes {
         }
 
         @Override
-        public boolean supportsUpgrade(PipeUpgradeType upgradeType) {
+        public boolean supportsCard(PipeCardType upgradeType) {
             return supportedUpgrades.contains(upgradeType);
         }
     };
 
     static final PipeType<ResourceHandler<FluidResource>> FLUID_PIPE = new PipeType<>() {
         private PipeHandlerWrapper<ResourceHandler<FluidResource>> wrapper = null;
-        private final List<PipeUpgradeType> supportedUpgrades = List.of(
-                BuiltinPipeUpgrades.SPEED_UPGRADE,
-                BuiltinPipeUpgrades.STACK_UPGRADE
+        private final List<PipeCardType> supportedUpgrades = List.of(
+                BuiltinPipeCards.SPEED_UPGRADE,
+                BuiltinPipeCards.STACK_UPGRADE
         );
 
         @Override
@@ -133,15 +133,15 @@ public class BuiltinPipeTypes {
         }
 
         @Override
-        public boolean supportsUpgrade(PipeUpgradeType upgradeType) {
+        public boolean supportsCard(PipeCardType upgradeType) {
             return supportedUpgrades.contains(upgradeType);
         }
     };
 
     static final PipeType<EnergyHandler> ENERGY_PIPE = new PipeType<>() {
         private PipeHandlerWrapper<EnergyHandler> wrapper = null;
-        private final List<PipeUpgradeType> supportedUpgrades = List.of(
-                BuiltinPipeUpgrades.ENERGY_UPGRADE
+        private final List<PipeCardType> supportedUpgrades = List.of(
+                BuiltinPipeCards.ENERGY_UPGRADE
         );
 
         @Override
@@ -184,7 +184,7 @@ public class BuiltinPipeTypes {
         }
 
         @Override
-        public boolean supportsUpgrade(PipeUpgradeType upgradeType) {
+        public boolean supportsCard(PipeCardType upgradeType) {
             return supportedUpgrades.contains(upgradeType);
         }
     };
