@@ -19,12 +19,10 @@ import java.util.Optional;
 
 import static com.leetftw.complexpipes.common.ComplexPipes.MODID;
 
-public record PipeScreenNumericSyncPayload(ResourceKey<Level> dimension, BlockPos position, Direction side, int priority, int ratio) implements CustomPacketPayload {
+public record PipeScreenNumericSyncPayload(BlockPos position, Direction side, int priority, int ratio) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<PipeScreenNumericSyncPayload> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(MODID, "sync_numeric_from_screen"));
 
     public static final StreamCodec<ByteBuf, PipeScreenNumericSyncPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.fromCodec(Level.RESOURCE_KEY_CODEC),
-            PipeScreenNumericSyncPayload::dimension,
             BlockPos.STREAM_CODEC,
             PipeScreenNumericSyncPayload::position,
             Direction.STREAM_CODEC,
@@ -57,8 +55,8 @@ public record PipeScreenNumericSyncPayload(ResourceKey<Level> dimension, BlockPo
 
         PipeConnection connection = connectionOptional.get();
         if (Math.abs(priority) < 10000)
-            connection.setRatio(priority);
-        if (Math.abs(ratio) < 10000)
+            connection.setPriority(priority);
+        if (ratio >= 1 && ratio < 10000)
             connection.setRatio(ratio);
     }
 }

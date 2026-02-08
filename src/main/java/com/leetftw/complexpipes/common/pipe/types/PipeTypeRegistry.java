@@ -57,7 +57,7 @@ public class PipeTypeRegistry {
                     BuiltInRegistries.BLOCK.key(),
                     registry -> {
                         for (Map.Entry<String, PipeType<?>> type : registeredTypes.entrySet()) {
-                            Identifier id = Identifier.fromNamespaceAndPath(MODID, type.getKey() + "_pipe");
+                            Identifier id = Identifier.fromNamespaceAndPath(MODID, type.getKey());
                             PipeBlock block = new PipeBlock(Block.Properties.of().setId(ResourceKey.create(BuiltInRegistries.BLOCK.key(), id)).noOcclusion().dynamicShape(), type.getValue());
                             type.getValue().setBlock(block);
                             registry.register(id, block);
@@ -73,7 +73,7 @@ public class PipeTypeRegistry {
                     BuiltInRegistries.ITEM.key(),
                     registry -> {
                         for (Map.Entry<String, PipeType<?>> type : registeredTypes.entrySet()) {
-                            Identifier id = Identifier.fromNamespaceAndPath(MODID, type.getKey() + "_pipe");
+                            Identifier id = Identifier.fromNamespaceAndPath(MODID, type.getKey());
                             //PipeBlock block = new PipeBlock(Block.Properties.of().setId(ResourceKey.create(BuiltInRegistries.BLOCK.key(), id)).noOcclusion().dynamicShape(), type.getValue());
                             BlockItem item = new BlockItem(type.getValue().getBlock(), new Item.Properties()
                                     .setId(ResourceKey.create(BuiltInRegistries.ITEM.key(), id))
@@ -96,7 +96,7 @@ public class PipeTypeRegistry {
                                     type.getValue().getBlock()
                             );
                             type.getValue().setBeType(blockEntityType);
-                            registry.register(Identifier.fromNamespaceAndPath(MODID, type.getKey() + "_pipe_be"), blockEntityType);
+                            registry.register(Identifier.fromNamespaceAndPath(MODID, type.getKey() + "_be"), blockEntityType);
                         }
                     }
             );

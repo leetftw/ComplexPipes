@@ -1,5 +1,6 @@
 package com.leetftw.complexpipes.common.cards;
 
+import com.leetftw.complexpipes.common.cards.builtin.RouterPipeCard;
 import com.leetftw.complexpipes.common.gui.ItemStackFilterMenu;
 import com.leetftw.complexpipes.common.items.ItemComponentRegistry;
 import com.leetftw.complexpipes.common.cards.builtin.upgrade.EnergyPipeUpgrade;
@@ -32,8 +33,17 @@ public class BuiltinPipeCards {
     public static final PipeCardType ENERGY_UPGRADE = new PipeCardType(EnergyPipeUpgrade.CODEC, EnergyPipeUpgrade::new);
     private static final Identifier ENERGY_UPGRADE_ID = Identifier.fromNamespaceAndPath(MODID, "energy_upgrade");
 
+
+    public static final PipeCardType ROUND_ROBIN_ROUTER = new PipeCardType(RouterPipeCard.CODEC, () -> new RouterPipeCard("round_robin"));
+    private static final Identifier ROUND_ROBIN_ROUTER_ID = Identifier.fromNamespaceAndPath(MODID, "round_robin_router");
+
+    public static final PipeCardType RATIO_ROUTER = new PipeCardType(RouterPipeCard.CODEC, () -> new RouterPipeCard("ratio"));
+    private static final Identifier RATIO_ROUTER_ID = Identifier.fromNamespaceAndPath(MODID, "ratio_router");
+
+
     public static final PipeCardType ITEM_STACK_FILTER = new PipeCardType(ItemStackPipeFilter.CODEC, ItemStackPipeFilter::new);
     private static final Identifier ITEM_STACK_FILTER_ID = Identifier.fromNamespaceAndPath(MODID, "item_filter");
+
 
     private static void registerItem(RegisterEvent.RegisterHelper<Item> register, Identifier id, PipeCardType upgrade) {
         ResourceKey<Item> itemId = ResourceKey.create(BuiltInRegistries.ITEM.key(), id);
@@ -68,6 +78,10 @@ public class BuiltinPipeCards {
         register.register(STACK_UPGRADE_ID, STACK_UPGRADE);
         register.register(SPEED_UPGRADE_ID, SPEED_UPGRADE);
         register.register(ENERGY_UPGRADE_ID, ENERGY_UPGRADE);
+
+        register.register(ROUND_ROBIN_ROUTER_ID, ROUND_ROBIN_ROUTER);
+        register.register(RATIO_ROUTER_ID, RATIO_ROUTER);
+
         register.register(ITEM_STACK_FILTER_ID, ITEM_STACK_FILTER);
     }
 
@@ -75,6 +89,10 @@ public class BuiltinPipeCards {
         registerItem(register, STACK_UPGRADE_ID, STACK_UPGRADE);
         registerItem(register, SPEED_UPGRADE_ID, SPEED_UPGRADE);
         registerItem(register, ENERGY_UPGRADE_ID, ENERGY_UPGRADE);
+
+        registerItem(register, ROUND_ROBIN_ROUTER_ID, ROUND_ROBIN_ROUTER);
+        registerItem(register, RATIO_ROUTER_ID, RATIO_ROUTER);
+
         registerItemWithMenu(register, ITEM_STACK_FILTER_ID, ITEM_STACK_FILTER,
                 new SimpleMenuProvider((containerId, playerInventory, player) -> new ItemStackFilterMenu(containerId, playerInventory, player.getInventory().getSelectedItem()),
                         Component.literal("Item Filter")));

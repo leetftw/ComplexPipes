@@ -29,7 +29,7 @@ public class ItemStackFilterMenu extends AbstractContainerMenu {
 
         @Override
         public int getContainerSize() {
-            return PipeConnection.MAX_CARDS;
+            return 9;
         }
 
         @Override

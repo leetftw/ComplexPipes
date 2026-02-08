@@ -23,11 +23,12 @@ public class RoundRobinRoutingStrategy extends BaseRoutingStrategy {
             insertionIndex = 0;
         }
 
-        // Reset when coming to end
-        if (insertionIndex >= previousConnectionCount) {
+        // Reset when priority changes
+        if (previousPriority != priorityLevel) {
             insertionIndex = 0;
         }
 
+        // Leave early if transfer is not valid
         if (maxTransfer <= 0 || handlers.isEmpty()) {
             transaction.close();
             return 0;
@@ -43,40 +44,42 @@ public class RoundRobinRoutingStrategy extends BaseRoutingStrategy {
         //    Interface 4: Priority 2
         //  Cycle: 3-4
         //  Alternative cycle when both 3 and 4 do not accept: 1-2
-
-        // Current problems:
-        // - states are not persistent (i.e. not saved)
-        // - this function gets called for every priority group, but does not accomodate states per priority group
-        // - validity of this loop is not fully worked out
-        // - transaction provided should not be closed, instead a subtransaction should be made
-
         List<Predicate<Object>> filters = targets.filters();
         int amountTransferred = 0;
-        int currentIndex = insertionIndex;
         int targetCount = handlers.size();
-        while (amountTransferred == 0 && (currentIndex + 1) % targetCount != insertionIndex) {
-            T targetHandler = handlers.get(insertionIndex);
-            CONJUNCTION.setPredicates(baseFilter, filters.get(insertionIndex));
+
+        Transaction subTransaction = Transaction.open(transaction);
+        for (int attempts = 0; attempts < targetCount; attempts++) {
+            // Set index based on insertionIndex, wrap around targetCount
+            int index = (insertionIndex + attempts) % targetCount;
+
+            CONJUNCTION.setPredicates(baseFilter, filters.get(index));
+
             amountTransferred = transferFunction.transfer(
                     handlerWrapper,
-                    base, targetHandler,
+                    base,
+                    handlers.get(index),
                     maxTransfer,
                     CONJUNCTION,
-                    transaction
+                    subTransaction
             );
-            currentIndex = (currentIndex + 1) % targetCount;
+
+            if (amountTransferred > 0) {
+                insertionIndex = (index + 1) % targetCount;
+                break;
+            }
         }
 
         assert amountTransferred <= maxTransfer;
         if (amountTransferred >= minTransfer) {
             previousConnectionCount = handlers.size();
-            insertionIndex = currentIndex;
-            transaction.commit();
-            transaction.close();
+            previousPriority = priorityLevel;
+            subTransaction.commit();
+            subTransaction.close();
             return amountTransferred;
         }
 
-        transaction.close();
+        subTransaction.close();
         return 0;
     }
 

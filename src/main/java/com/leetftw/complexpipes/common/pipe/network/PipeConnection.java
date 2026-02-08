@@ -1,7 +1,6 @@
 package com.leetftw.complexpipes.common.pipe.network;
 
 import com.leetftw.complexpipes.common.cards.PipeCard;
-import com.leetftw.complexpipes.common.cards.PipeCardType;
 import com.leetftw.complexpipes.common.items.ItemComponentRegistry;
 import com.leetftw.complexpipes.common.items.ItemRegistry;
 import com.leetftw.complexpipes.common.pipe.types.PipeType;
@@ -28,8 +27,6 @@ import java.util.stream.Stream;
 import static com.leetftw.complexpipes.common.ComplexPipes.LOGGER;
 
 public class PipeConnection {
-    public static final int MAX_CARDS = 6;
-
     public static final Codec<PipeConnection> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
                     Codec.STRING.fieldOf("type").forGetter(a -> a.TYPE.getRegisteredId()),
@@ -40,9 +37,9 @@ public class PipeConnection {
                     Codec.INT.fieldOf("ratio").forGetter(PipeConnection::getRatio),
                     CompoundTag.CODEC.fieldOf("routingStrategy").forGetter(a -> a.getRoutingStrategy().serialize()),
                     Codec.INT.fieldOf("tickCount").forGetter(a -> a.tickCount),
-                    Codec.list(Codec.pair(Codec.intRange(0, MAX_CARDS - 1).fieldOf("slot").codec(), PipeUpgrade.CODEC.fieldOf("upgrade").codec())).fieldOf("upgrades").forGetter(a -> {
+                    Codec.list(Codec.pair(Codec.intRange(0, 255).fieldOf("slot").codec(), PipeUpgrade.CODEC.fieldOf("upgrade").codec())).fieldOf("upgrades").forGetter(a -> {
                         List<Pair<Integer, PipeCard>> pairs = new ArrayList<>();
-                        for (int i = 0; i < MAX_CARDS; i++)
+                        for (int i = 0; i < a.pipeCards.length; i++)
                             if (a.pipeCards[i] != null)
                                 pairs.add(new Pair<>(i, a.pipeCards[i]));
                         return pairs;
@@ -57,9 +54,10 @@ public class PipeConnection {
     private int priority = 0;
     private int ratio = 1;
     private BaseRoutingStrategy routingStrategy = new DefaultRoutingStrategy();
-    private final PipeCard[] pipeCards = new PipeCard[MAX_CARDS];
     private int tickCount = 0;
-    private PipeType<?> TYPE;
+    private final PipeType<?> TYPE;
+    private final int MAX_CARDS;
+    private final PipeCard[] pipeCards;
 
     private Predicate<Object> predicate;
 
@@ -69,6 +67,8 @@ public class PipeConnection {
         this.pipePos = pos;
         this.side = side;
         this.TYPE = type;
+        this.MAX_CARDS = TYPE.getMaxCards();
+        this.pipeCards = new PipeCard[MAX_CARDS];
     }
 
     private PipeConnection(String type, BlockPos pos, Direction side, String mode, int priority, int ratio, CompoundTag routingStrategy, int tickCount, List<Pair<Integer, PipeCard>> cards) {
@@ -79,10 +79,21 @@ public class PipeConnection {
         this.ratio = ratio;
         this.routingStrategy = BaseRoutingStrategy.create(routingStrategy);
         this.tickCount = tickCount;
-        for (Pair<Integer, PipeCard> storedCard : cards)
-            this.pipeCards[storedCard.getFirst()] = storedCard.getSecond();
-        this.dirty = true;
+
         this.TYPE = PipeTypeRegistry.getType(type);
+        this.MAX_CARDS = TYPE.getMaxCards();
+        this.pipeCards = new PipeCard[MAX_CARDS];
+
+        for (Pair<Integer, PipeCard> storedCard : cards) {
+            if (storedCard.getFirst() >= MAX_CARDS) {
+                // This can happen due to config changes
+                // Void items for now, maybe drop into world in the future?
+                LOGGER.warn("[PipeConnection] Found card with invalid slot index {} while decoding!.", storedCard.getFirst());
+                continue;
+            }
+            this.pipeCards[storedCard.getFirst()] = storedCard.getSecond();
+        }
+        this.dirty = true;
     }
 
     public BlockPos getPipePos() {
@@ -95,10 +106,6 @@ public class PipeConnection {
 
     public void overwriteSide(Direction value) {
         this.side = value;
-    }
-
-    public void overwriteType(PipeType<?> pipeType) {
-        this.TYPE = pipeType;
     }
 
     public Direction getSide() {
@@ -146,12 +153,17 @@ public class PipeConnection {
 
     public void setCardInSlot(int slot, PipeCard card) {
         pipeCards[slot] = card;
+        if (card.getRoutingStrategyId() != null) {
+            findRoutingStrategy();
+        }
         setDirty();
     }
 
     private void findRoutingStrategy() {
         String id = "default";
         for (PipeCard card : pipeCards) {
+            if (card == null) continue;
+
             String cardStrategy = card.getRoutingStrategyId();
             if (cardStrategy != null) {
                 id = cardStrategy;
@@ -164,29 +176,36 @@ public class PipeConnection {
         }
     }
 
-    public PipeCard removeCardInSlot(int slot) {
+    public void removeCardInSlot(int slot) {
         PipeCard upgrade = pipeCards[slot];
         pipeCards[slot] = null;
         setDirty();
         if (upgrade.getRoutingStrategyId() != null) {
             findRoutingStrategy();
         }
-        return upgrade;
     }
 
-    public boolean tryAddCard(PipeCard card) {
+    public boolean mayAddCard(PipeCard card) {
         // Max 6 card
         if (Arrays.stream(pipeCards).filter(Objects::nonNull).count() == MAX_CARDS)
             return false;
+
         // Adding this card should not exceed max upgrades for this type
         if (card.getMaxInstalledCount() == Arrays.stream(pipeCards).filter(Objects::nonNull)
                 .filter(existingUpgrade -> existingUpgrade.getType() == card.getType()).count())
             return false;
-        // The card should be supported by the pipe
-        if (!TYPE.supportsCard(card.getType()))
-            return false;
-        // The card should be compatible with the other cards
 
+        // The card should be supported by the pipe
+        if (!TYPE.supportsCard(card))
+            return false;
+
+        // TODO: The card should be compatible with the other cards
+
+        return true;
+    }
+
+    public boolean tryAddCard(PipeCard card) {
+        if (!mayAddCard(card)) return false;
 
         int firstEmptyIndex = -1;
         for (int i = 0; i < MAX_CARDS; i++) {
@@ -388,5 +407,9 @@ public class PipeConnection {
 
     public PipeType<?> getType() {
         return TYPE;
+    }
+
+    public int getMaxCards() {
+        return MAX_CARDS;
     }
 }

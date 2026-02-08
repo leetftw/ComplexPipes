@@ -1,6 +1,7 @@
 package com.leetftw.complexpipes.common.items.creative;
 
 import com.leetftw.complexpipes.common.items.ItemRegistry;
+import com.leetftw.complexpipes.common.pipe.types.BuiltinPipeTypes;
 import com.leetftw.complexpipes.common.pipe.types.PipeTypeRegistry;
 import com.leetftw.complexpipes.common.cards.PipeCardRegistry;
 import net.minecraft.core.registries.Registries;
@@ -17,7 +18,7 @@ public class CreativeModeTabRegistry {
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register("main_tab", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.complexpipes")) //The language key for the title of your CreativeModeTab
             .withTabsBefore(CreativeModeTabs.COMBAT)
-            .icon(() -> PipeTypeRegistry.getType("item").getBlock().asItem().getDefaultInstance())
+            .icon(() -> BuiltinPipeTypes.BASIC_ITEM_PIPE.getBlock().asItem().getDefaultInstance())
             .displayItems(CreativeModeTabRegistry::addCreativeItems).build());
 
     private static void addCreativeItems(CreativeModeTab.ItemDisplayParameters parameters, CreativeModeTab.Output output) {

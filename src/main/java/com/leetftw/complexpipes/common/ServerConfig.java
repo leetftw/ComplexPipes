@@ -7,6 +7,18 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class ServerConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
+    public static final ModConfigSpec.IntValue ITEM_PIPE_TRANSFER = BUILDER
+            .comment("Determines the default amount of items an Item Pipe transfers per operation.")
+            .defineInRange("itemPipeTransferRate", 4, 0, Integer.MAX_VALUE);
+
+    public static final ModConfigSpec.IntValue FLUID_PIPE_TRANSFER = BUILDER
+            .comment("Determines the default amount of mB a Fluid Pipe transfers per operation.")
+            .defineInRange("fluidPipeTransferRate", 250, 0, Integer.MAX_VALUE);
+
+    public static final ModConfigSpec.IntValue ENERGY_PIPE_TRANSFER = BUILDER
+            .comment("Determines the default amount of FE an Energy Pipe transfers per operation.")
+            .defineInRange("energyPipeTransferRate", 128, 0, Integer.MAX_VALUE);
+
     public static final ModConfigSpec.DoubleValue STACK_UPGRADE_MULTIPLIER = BUILDER
             .comment("Determines the multiplier for Stack Upgrades.")
             .defineInRange("stackUpgradeMultiplier", 2.0, 1, 256);

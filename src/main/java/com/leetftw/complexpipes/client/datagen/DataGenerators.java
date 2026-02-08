@@ -1,7 +1,8 @@
 package com.leetftw.complexpipes.client.datagen;
 
 import com.leetftw.complexpipes.client.datagen.providers.BlockLootTableProvider;
-import com.leetftw.complexpipes.client.datagen.providers.PipeModelProvider;
+import com.leetftw.complexpipes.client.datagen.providers.BlockModelProvider;
+import com.leetftw.complexpipes.client.datagen.providers.PipeRecipeProvider;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.PackOutput;
@@ -28,10 +29,12 @@ public class DataGenerators
         PackOutput packOutput = generator.getPackOutput();
         CompletableFuture<HolderLookup.Provider> lookupProvider = event.getLookupProvider();
 
-        generator.addProvider(true, new PipeModelProvider(packOutput));
         generator.addProvider(true, new LootTableProvider(packOutput, Set.of(), List.of(new LootTableProvider.SubProviderEntry(
                 BlockLootTableProvider::new,
                 LootContextParamSets.BLOCK
         )), lookupProvider));
+
+        event.createProvider(BlockModelProvider::new);
+        event.createProvider(PipeRecipeProvider.Runner::new);
     }
 }

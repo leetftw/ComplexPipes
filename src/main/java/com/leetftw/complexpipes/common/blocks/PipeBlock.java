@@ -10,16 +10,21 @@ import com.leetftw.complexpipes.common.pipe.network.PipeConnection;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnectionMode;
 import com.leetftw.complexpipes.common.pipe.network.PipeNetworkView;
 import com.leetftw.complexpipes.common.pipe.types.PipeType;
-import com.leetftw.complexpipes.common.util.routing.RatioRoutingStrategy;
-import com.leetftw.complexpipes.common.util.routing.RoundRobinRoutingStrategy;
+import com.leetftw.complexpipes.common.pipe.types.PipeTypeRegistry;
+import com.mojang.serialization.Codec;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -39,11 +44,12 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jspecify.annotations.NonNull;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 
 public class PipeBlock extends Block implements EntityBlock
@@ -125,9 +131,6 @@ public class PipeBlock extends Block implements EntityBlock
 
     private BlockState getStateForPos(BlockState state, Level level, BlockPos pos)
     {
-        BlockState initialState = state;
-
-        boolean connection = false;
         for (Direction direction : Direction.values())
         {
             // Get the neighbour block
@@ -136,7 +139,6 @@ public class PipeBlock extends Block implements EntityBlock
             boolean isNeighbour = neighbor.getBlock().equals(this);
             boolean sideConnected =  level.getCapability(TYPE.getBlockCapability(), neighbourPos, direction.getOpposite()) != null;
             isNeighbour |= sideConnected;
-            connection |= sideConnected;
 
             // Update the blockstate of this block
             state = state.setValue(CONNECTION_MAP.get(direction), isNeighbour);
@@ -173,7 +175,7 @@ public class PipeBlock extends Block implements EntityBlock
         return getStateForPos(defaultBlockState(), context.getLevel(), context.getClickedPos());
     }
 
-    private void performHitAction(BlockPos pos, BlockHitResult hitResult, Consumer<Direction> axisHandler, Runnable centerHandler) {
+    private InteractionResult performHitAction(BlockPos pos, BlockHitResult hitResult, Function<Direction, InteractionResult> axisHandler, Supplier<InteractionResult> centerHandler) {
         Vec3 hitLocation = hitResult.getLocation();
         Vec3 offsetFromCenter = hitLocation.subtract(pos.getCenter());
 
@@ -193,91 +195,126 @@ public class PipeBlock extends Block implements EntityBlock
                 axis = offsetFromCenter.z > 0 ? Direction.SOUTH : Direction.NORTH;
             }
 
-            axisHandler.accept(axis);
+            return axisHandler.apply(axis);
         }
         else {
-            centerHandler.run();
+            return centerHandler.get();
         }
     }
 
+    private InteractionResult useWithoutItemSide(BlockState state, Level level, BlockPos pos, Player player, Direction axis) {
+        if (!level.isClientSide()) {
+            // TODO: If player is crouching and the connection is IMPORT/EXPORT then remove the import/export card
+            BlockEntity blockEntity = level.getBlockEntity(pos);
+            if (blockEntity instanceof PipeBlockEntity pipeBE) {
+                Optional<PipeConnection> connection = pipeBE.getConnectionForSide(axis);
+                if (connection.isEmpty()) return InteractionResult.FAIL;
+
+                player.openMenu(new SimpleMenuProvider(
+                        (containerId, playerInventory, player1) -> new PipeConnectionMenu(containerId, playerInventory, ContainerLevelAccess.create(level, pos), connection.get(), level.dimension()),
+                        state.getBlock().getName()
+                ), (extraDataWriter) -> ByteBufCodecs.STRING_UTF8.encode(extraDataWriter, TYPE.getRegisteredId()));
+            }
+        }
+
+        return InteractionResult.FAIL;
+    }
+
+    private InteractionResult useWithoutItemCenter(BlockState state, Level level, BlockPos pos, Player player) {
+        if (!level.isClientSide()) {
+            BlockEntity blockEntity = level.getBlockEntity(pos);
+            if (blockEntity instanceof PipeBlockEntity pipeBE) {
+                if (pipeBE.networkView == null)
+                    return null;
+                Component header = Component.literal(String.format(
+                        "%-14s | %-4s | %-9s | %4s | %5s | %7s",
+                        "Pos", "Side", "Mode", "Prio", "Ratio", "Rate/t"
+                )).withStyle(ChatFormatting.GRAY);
+
+                player.displayClientMessage(header, false);
+
+                for (PipeConnection c : pipeBE.networkView.connections) {
+                    Component line = Component.literal(String.format(
+                            "%-14s | %-4s | %-9s | %4d | %5d | ~%6d",
+                            c.getPipePos().toShortString(),
+                            c.getSide().getSerializedName().toUpperCase(),
+                            c.getMode().name(),
+                            c.getPriority(),
+                            c.getRatio(),
+                            Double.valueOf(c.calculateResourcesPerTick()).intValue()
+                    )).withStyle(ChatFormatting.WHITE);
+
+                    player.displayClientMessage(line, false);
+                }
+            }
+        }
+
+        return null;
+    }
+
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+    protected @NonNull InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         InteractionResult result = super.useWithoutItem(state, level, pos, player, hitResult);
 
-        performHitAction(pos, hitResult, (axis) -> {
-            if (!level.isClientSide()) {
-                // TODO: If player is crouching and the connection is IMPORT/EXPORT then remove the import/export card
-                BlockEntity blockEntity = level.getBlockEntity(pos);
-                if (blockEntity instanceof PipeBlockEntity pipeBE) {
-                    Optional<PipeConnection> connection = pipeBE.getConnectionForSide(axis);
-                    if (connection.isEmpty()) return;
+        InteractionResult computed = performHitAction(pos, hitResult,
+                (axis) -> useWithoutItemSide(state, level, pos, player, axis),
+                () -> useWithoutItemCenter(state, level, pos, player)
+        );
 
-                    player.openMenu(new SimpleMenuProvider(
-                            (containerId, playerInventory, player1) -> new PipeConnectionMenu(containerId, playerInventory, connection.get(), TYPE, level.dimension()),
-                            state.getBlock().getName()
-                    ));
-                }
-            }
-        }, () -> {
-            if (!level.isClientSide()) {
-                BlockEntity blockEntity = level.getBlockEntity(pos);
-                if (blockEntity instanceof PipeBlockEntity pipeBE) {
-                    if (pipeBE.networkView == null)
-                        return;
-                    for (PipeConnection connection : pipeBE.networkView.connections) {
-                        player.displayClientMessage(Component.literal(connection.getPipePos().toShortString() + " | " + connection.getSide().toString() + " | " + connection.getMode().name() + " | " + connection.calculateResourcesPerTick() + " per tick"), false);
-                    }
-                }
-            }
-        });
+        return computed != null ? computed : result;
+    }
 
-        return result;
+    private InteractionResult useItemOnSide( ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, Direction axis) {
+        if (level.isClientSide()) return null;
+
+        if (!(stack.getItem() instanceof PipeCardItem)) return null;
+
+        // Get connection
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (!(blockEntity instanceof PipeBlockEntity pipeBE)) return null;
+        pipeBE.refreshConnections();
+        Optional<PipeConnection> connectionOptional = pipeBE.getConnectionForSide(axis);
+        if (connectionOptional.isEmpty()) return null;
+
+        // For upgrades: try adding upgrade
+        // For cards: try setting modes
+        boolean added = false;
+
+        // TODO: Clean up this logic
+        if (stack.is(ItemRegistry.EXTRACTION_CARD)) {
+            PipeConnectionMode oldMode = connectionOptional.get().getMode();
+            if (oldMode != PipeConnectionMode.EXTRACT) {
+                added = oldMode != PipeConnectionMode.INSERT || player.getInventory().add(new ItemStack(ItemRegistry.INSERTION_CARD.get(), 1));
+                if (added) connectionOptional.get().setMode(PipeConnectionMode.EXTRACT);
+            }
+        }
+        else if (stack.is(ItemRegistry.INSERTION_CARD)) {
+            PipeConnectionMode oldMode = connectionOptional.get().getMode();
+            if (oldMode != PipeConnectionMode.INSERT) {
+                added = oldMode != PipeConnectionMode.EXTRACT || player.getInventory().add(new ItemStack(ItemRegistry.EXTRACTION_CARD.get(), 1));
+                if (added) connectionOptional.get().setMode(PipeConnectionMode.INSERT);
+            }
+        }
+        else if (stack.getItem() instanceof PipeCardItem) added = connectionOptional.get().tryAddCard(stack.get(ItemComponentRegistry.PIPE_CARD_DATA));
+
+        if (!added) return InteractionResult.FAIL;
+
+        // Inform player and consume item
+        player.displayClientMessage(Component.literal("Installed ").append(stack.getDisplayName()), true);
+        stack.consume(1, player);
+        return InteractionResult.CONSUME;
     }
 
     @Override
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        AtomicReference<InteractionResult> result = new AtomicReference<>(super.useItemOn(stack, state, level, pos, player, hand, hitResult));
+        InteractionResult result = super.useItemOn(stack, state, level, pos, player, hand, hitResult);
 
-        if (!(stack.getItem() instanceof PipeCardItem)) return result.get();
-        performHitAction(pos, hitResult, (axis) -> {
-            if (level.isClientSide()) return;
+        InteractionResult computed = performHitAction(pos, hitResult,
+                (axis) -> useItemOnSide(stack, state, level, pos, player, hand, axis),
+                () -> null
+        );
 
-            // Get connection
-            BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (!(blockEntity instanceof PipeBlockEntity pipeBE)) return;
-            Optional<PipeConnection> connectionOptional = pipeBE.getConnectionForSide(axis);
-            if (connectionOptional.isEmpty()) return;
-
-            // For upgrades: try adding upgrade
-            // For cards: try setting modes
-            boolean added = false;
-
-            if (stack.is(ItemRegistry.EXTRACTION_CARD)) {
-                PipeConnectionMode oldMode = connectionOptional.get().getMode();
-                if (oldMode != PipeConnectionMode.EXTRACT) {
-                    added = oldMode != PipeConnectionMode.INSERT || player.getInventory().add(new ItemStack(ItemRegistry.INSERTION_CARD.get(), 1));
-                    if (added) connectionOptional.get().setMode(PipeConnectionMode.EXTRACT);
-                }
-            }
-            else if (stack.is(ItemRegistry.INSERTION_CARD)) {
-                PipeConnectionMode oldMode = connectionOptional.get().getMode();
-                if (oldMode != PipeConnectionMode.INSERT) {
-                    added = oldMode != PipeConnectionMode.EXTRACT || player.getInventory().add(new ItemStack(ItemRegistry.EXTRACTION_CARD.get(), 1));
-                    if (added) connectionOptional.get().setMode(PipeConnectionMode.INSERT);
-                }
-            }
-            else if (stack.getItem() instanceof PipeCardItem) added = connectionOptional.get().tryAddCard(stack.get(ItemComponentRegistry.PIPE_CARD_DATA));
-
-            if (!added) return;
-
-            // Inform player and consume item
-            stack.consume(1, player);
-            result.set(InteractionResult.CONSUME);
-            player.displayClientMessage(Component.literal("Installed ").append(stack.getDisplayName()), true);
-
-        }, () -> {});
-
-        return result.get();
+        return computed != null ? computed : result;
     }
 
     @Override

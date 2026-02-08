@@ -22,9 +22,9 @@ import java.util.function.Consumer;
 
 import static com.leetftw.complexpipes.common.ComplexPipes.MODID;
 
-public class PipeModelProvider extends ModelProvider
+public class BlockModelProvider extends ModelProvider
 {
-    public PipeModelProvider(PackOutput output)
+    public BlockModelProvider(PackOutput output)
     {
         super(output, MODID);
     }
@@ -97,9 +97,7 @@ public class PipeModelProvider extends ModelProvider
         {
             createTrivialCube(BlockRegistry.EXAMPLE_BLOCK.get());
 
-            PipeTypeRegistry.forEach(type -> {
-                createPipeFrame(type);
-            });
+            PipeTypeRegistry.forEach(this::createPipeFrame);
         }
     }
 
@@ -119,8 +117,6 @@ public class PipeModelProvider extends ModelProvider
             generateFlatItem(ItemRegistry.DEBUG_ITEM.get(), ModelTemplates.FLAT_ITEM);
             generateFlatItem(ItemRegistry.EXTRACTION_CARD.get(), ModelTemplates.FLAT_ITEM);
             generateFlatItem(ItemRegistry.INSERTION_CARD.get(), ModelTemplates.FLAT_ITEM);
-            generateFlatItem(ItemRegistry.ROUND_ROBIN_ROUTER.get(), ModelTemplates.FLAT_ITEM);
-            generateFlatItem(ItemRegistry.RATIO_ROUTER.get(), ModelTemplates.FLAT_ITEM);
         }
     }
 }
