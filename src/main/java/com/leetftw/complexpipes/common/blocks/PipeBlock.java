@@ -44,6 +44,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.neoforge.common.Tags;
 import org.jspecify.annotations.NonNull;
 
 import javax.annotation.Nullable;
@@ -264,9 +265,57 @@ public class PipeBlock extends Block implements EntityBlock
         return computed != null ? computed : result;
     }
 
-    private InteractionResult useItemOnSide( ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, Direction axis) {
+    private InteractionResult useItemOnSide(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, Direction axis) {
         if (level.isClientSide()) return null;
 
+        // If it is a wrench, toggle the connection on that side
+        if (stack.is(Tags.Items.TOOLS_WRENCH)) {
+            BlockEntity blockEntity = level.getBlockEntity(pos);
+            if (!(blockEntity instanceof PipeBlockEntity pipeBE))
+                return InteractionResult.FAIL;
+
+            // Make sure pipe has connection
+            pipeBE.refreshConnections();
+            Optional<PipeConnection> connectionOptional = pipeBE.getConnectionForSide(axis);
+            if (connectionOptional.isEmpty()) {
+                // Add a disabled connection if there is no connection at all
+                pipeBE.setDisabled(axis);
+                if (pipeBE.networkView != null) pipeBE.networkView.invalidate();
+                return InteractionResult.SUCCESS;
+            }
+
+            // Toggle connection
+            PipeConnection connection = connectionOptional.get();
+            if (connection.getMode() == PipeConnectionMode.DISABLED) {
+                connection.setMode(PipeConnectionMode.PASSIVE);
+                pipeBE.setChanged();
+                if (pipeBE.networkView != null) pipeBE.networkView.invalidate();
+                return InteractionResult.SUCCESS;
+            } else if (connection.getMode() == PipeConnectionMode.PASSIVE) {
+                connection.setMode(PipeConnectionMode.DISABLED);
+                pipeBE.setChanged();
+                if (pipeBE.networkView != null) pipeBE.networkView.invalidate();
+                return InteractionResult.SUCCESS;
+            }
+
+            // Pop off all cards
+            List<ItemStack> items = new ArrayList<>();
+            connection.appendItems(items);
+
+            // First try to add all cards to the player's inventory, if that fails drop them on the ground
+            for (ItemStack storedStack : items) {
+                if (!player.getInventory().add(storedStack)) {
+                    player.drop(storedStack, false);
+                }
+            }
+
+            connection.setMode(PipeConnectionMode.PASSIVE);
+            pipeBE.setChanged();
+            if (pipeBE.networkView != null) pipeBE.networkView.invalidate();
+            return InteractionResult.SUCCESS;
+        }
+
+        // Otherwise it has to be a card
         if (!(stack.getItem() instanceof PipeCardItem)) return null;
 
         // Get connection

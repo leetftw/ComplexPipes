@@ -19,32 +19,30 @@ public abstract class PipeType<T> {
     public final String getRegisteredId() {
         return id;
     }
-
     public final PipeBlock getBlock() {
         return block;
     }
-
     public final BlockEntityType<PipeBlockEntity> getBlockEntityType() {
         return beType;
+    }
+
+    final void setRegisteredId(@NotNull String id) {
+        this.id = id;
+    }
+    final void setBlock(@NotNull PipeBlock block) {
+        this.block = block;
+    }
+    final void setBeType(@NotNull BlockEntityType<PipeBlockEntity> beType) {
+        this.beType = beType;
     }
 
     public abstract BlockCapability<T, Direction> getBlockCapability();
     public abstract PipeHandlerWrapper<T> getHandlerWrapper();
     public abstract int getDefaultTransferAmount();
     public abstract int getDefaultTransferSpeed();
-    public abstract Identifier getTexturePath();
     public abstract int getMaxCards();
     public abstract boolean supportsCard(PipeCard upgrade);
 
-    final void setRegisteredId(@NotNull String id) {
-        this.id = id;
-    }
-
-    final void setBlock(@NotNull PipeBlock block) {
-        this.block = block;
-    }
-
-    final void setBeType(@NotNull BlockEntityType<PipeBlockEntity> beType) {
-        this.beType = beType;
-    }
+    public abstract Identifier getFrameTexturePath();
+    public abstract Identifier getCoreTexturePath();
 }

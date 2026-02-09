@@ -98,8 +98,15 @@ public class PipeBlockEntity extends BlockEntity {
 
             if (serverLevel.getCapability(TYPE.getBlockCapability(), neighbour, dir.getOpposite()) == null) {
                 if (ownedConnections.containsKey(dir)) {
+                    PipeConnection connection = ownedConnections.get(dir);
+                    if (connection.getMode() == PipeConnectionMode.DISABLED) {
+                        // Check if block still exists
+                        BlockState currentState = getBlockState();
+                        if (currentState.getValue(PipeBlock.CONNECTION_MAP.get(dir))) continue;
+                    }
+
                     List<ItemStack> droppedItems = new ArrayList<>();
-                    ownedConnections.get(dir).appendItems(droppedItems);
+                    connection.appendItems(droppedItems);
                     for (ItemStack droppedItem : droppedItems) {
                         ItemEntity itemEntity = new ItemEntity(serverLevel, pos.getX(), pos.getY(), pos.getZ(), droppedItem);
                         itemEntity.setDefaultPickUpDelay();
@@ -224,6 +231,18 @@ public class PipeBlockEntity extends BlockEntity {
                     new ChunkPos(getBlockPos()),
                     createClientPayload()
             );*/
+        }
+    }
+
+    public void setDisabled(Direction axis) {
+        if (ownedConnections.containsKey(axis)) {
+            ownedConnections.get(axis).setMode(PipeConnectionMode.DISABLED);
+            setChanged();
+        } else {
+            PipeConnection connection = new PipeConnection(TYPE, getBlockPos(), axis);
+            connection.setMode(PipeConnectionMode.DISABLED);
+            ownedConnections.put(axis, connection);
+            setChanged();
         }
     }
 }

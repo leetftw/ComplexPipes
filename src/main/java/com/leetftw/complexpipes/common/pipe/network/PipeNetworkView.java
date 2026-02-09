@@ -52,6 +52,23 @@ public class PipeNetworkView {
                 BlockState neighbourState = level.getBlockState(neighbourPos);
 
                 if (neighbourState.getBlock() instanceof PipeBlock) {
+                    // First check if neither block entity nor neighbour block entity is DISABLED
+                    BlockEntity currentBE = level.getBlockEntity(current);
+                    if (currentBE instanceof PipeBlockEntity currentPipeBE) {
+                        Optional<PipeConnection> currentConnectionOptional = currentPipeBE.getConnectionForSide(d);
+                        if (currentConnectionOptional.isPresent() && currentConnectionOptional.get().getMode() == PipeConnectionMode.DISABLED) {
+                            continue;
+                        }
+                    }
+
+                    BlockEntity neighbourBE = level.getBlockEntity(neighbourPos);
+                    if (neighbourBE instanceof PipeBlockEntity neighbourPipeBE) {
+                        Optional<PipeConnection> neighbourConnectionOptional = neighbourPipeBE.getConnectionForSide(d.getOpposite());
+                        if (neighbourConnectionOptional.isPresent() && neighbourConnectionOptional.get().getMode() == PipeConnectionMode.DISABLED) {
+                            continue;
+                        }
+                    }
+
                     stack.push(neighbourPos);
                 }
             }

@@ -5,11 +5,31 @@
 
   "item.complexpipes.extraction_card": "Extraction Card",
   "item.complexpipes.insertion_card": "Insertion Card",
-  "item.complexpipes.round_robin_card": "Round Robin Card",
+  "item.complexpipes.round_robin_router": "Round Robin Router",
+  "item.complexpipes.ratio_router": "Ratio Router",
+  "item.complexpipes.item_filter": "Item Filter",
+  "item.complexpipes.pipe_card_debug": "Debug Card",
 
-  "block.complexpipes.item_pipe": "Item Pipe",
-  "block.complexpipes.fluid_pipe": "Fluid Pipe",
-  "block.complexpipes.energy_pipe": "Energy Pipe",
+
+  "block.complexpipes.basic_item_pipe": "Basic Item Pipe",
+  "block.complexpipes.basic_fluid_pipe": "Basic Fluid Pipe",
+  "block.complexpipes.basic_energy_pipe": "Basic Energy Pipe",
+
+
+  "block.complexpipes.enhanced_item_pipe": "Enhanced Item Pipe",
+  "block.complexpipes.enhanced_fluid_pipe": "Enhanced Fluid Pipe",
+  "block.complexpipes.enhanced_energy_pipe": "Enhanced Energy Pipe",
+
+
+  "block.complexpipes.advanced_item_pipe": "Advanced Item Pipe",
+  "block.complexpipes.advanced_fluid_pipe": "Advanced Fluid Pipe",
+  "block.complexpipes.advanced_energy_pipe": "Advanced Energy Pipe",
+
+
+  "block.complexpipes.extreme_item_pipe": "Extreme Item Pipe",
+  "block.complexpipes.extreme_fluid_pipe": "Extreme Fluid Pipe",
+  "block.complexpipes.extreme_energy_pipe": "Extreme Energy Pipe",
+
 
   "item.complexpipes.speed_upgrade": "Speed Upgrade",
   "item.complexpipes.stack_upgrade": "Stack Upgrade",
@@ -18,10 +38,8 @@
   "item.complexpipes.item_stack_filter": "Item Filter",
 
   "complexpipes.configuration.title": "Complex Pipes Configuration",
-  "complexpipes.configuration.section.complexpipes.common.toml": "Example Mod Configs",
-  "complexpipes.configuration.section.complexpipes.common.toml.title": "Example Mod Configs",
-  "complexpipes.configuration.items": "Item List",
-  "complexpipes.configuration.logDirtBlock": "Log Dirt Block",
-  "complexpipes.configuration.magicNumberIntroduction": "Magic Number Text",
-  "complexpipes.configuration.magicNumber": "Magic Number"
+  "complexpipes.configuration.renderPipeAsBlockEntity": "Render Pipes as Block Entities",
+  "complexpipes.configuration.itemPipeTransferRate": "Base Transfer Rate for Item Pipes (items/op)",
+  "complexpipes.configuration.fluidPipeTransferRate": "Base Transfer Rate for Fluid Pipes (mb/op)",
+  "complexpipes.configuration.energyPipeTransferRate": "Base Transfer Rate for Energy Pipes (FE/op)"
 }

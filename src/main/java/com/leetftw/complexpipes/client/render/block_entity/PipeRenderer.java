@@ -22,6 +22,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.Material;
+import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
@@ -56,19 +57,20 @@ public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity, PipeRe
 
         if (ClientConfig.RENDER_PIPE_BE.get()) {
             BlockStateModel model = Minecraft.getInstance().getBlockRenderer().getBlockModel(renderState.blockState);
-
             nodeCollector.submitBlockModel(poseStack, RenderTypes.entityCutout(TextureAtlas.LOCATION_BLOCKS), model, 0, 0, 0, renderState.lightCoords, OverlayTexture.NO_OVERLAY, 0);
-
-            // Draw pipe
         }
 
         poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);
 
-        Material pipeMaterial = new MaterialMapper(TextureAtlas.LOCATION_BLOCKS, "block").apply(renderState.pipeBlockEntity.TYPE.getTexturePath());
+        Material pipeMaterial = new MaterialMapper(TextureAtlas.LOCATION_BLOCKS, "block").apply(renderState.pipeBlockEntity.TYPE.getFrameTexturePath());
         TextureAtlasSprite sprite = Minecraft.getInstance().getAtlasManager().get(pipeMaterial);
-        // This variable needs to be renamed
-        float pipeRadius = 8f / 16f / 2f;
+
+        float nodeRadius = 8f / 16f / 2f;
+        float pipeRadius = 6f / 16f / 2f;
+        float pipeInnerRadius = 4f / 16f / 2f;
+        float pipeDisabledRadius = 5f / 16f / 2f;
+
 
         for (ClientPipeConnection connection : renderState.pipeBlockEntity.getClientPipeConnections()) {
             if (connection.mode() == PipeConnectionMode.PASSIVE)
@@ -82,70 +84,95 @@ public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity, PipeRe
             // Rotate pose stack so that pipe faces towards positive y
             poseStack.pushPose();
             poseStack.mulPose(connection.side().getRotation());
+            // Block is [-0.5,0.5] in all axes
 
-            nodeCollector.submitCustomGeometry(poseStack, pipeMaterial.renderType(RenderTypes::entitySolid), (PoseStack.Pose pose, VertexConsumer consumer) -> {
-                BlockColors blockColors = Minecraft.getInstance().getBlockColors();
-                /*int color = blockColors.getColor(
-                        renderState.blockState,
-                        renderState.pipeBlockEntity.getLevel(),
-                        renderState.blockPos
-                );*/
+            if (connection.mode() == PipeConnectionMode.DISABLED) {
+                nodeCollector.submitCustomGeometry(poseStack, RenderTypes.debugQuads(), (PoseStack.Pose pose, VertexConsumer consumer) -> {
+                    // Draw four quads inside pipe frame to cover up gaps when disabled
 
+                    int color = 0xFF333333;
+
+                    // Positive x face
+                    consumer.addVertex(pose, pipeDisabledRadius, pipeRadius, pipeInnerRadius).setColor(color);
+                    consumer.addVertex(pose, pipeDisabledRadius, pipeRadius, -pipeInnerRadius).setColor(color);
+                    consumer.addVertex(pose, pipeDisabledRadius, 1.0f - pipeRadius,  -pipeInnerRadius).setColor(color);
+                    consumer.addVertex(pose, pipeDisabledRadius, 1.0f - pipeRadius,  pipeInnerRadius).setColor(color);
+
+                    // Negative x face
+                    consumer.addVertex(pose, -pipeDisabledRadius, pipeRadius, -pipeInnerRadius).setColor(color);
+                    consumer.addVertex(pose, -pipeDisabledRadius, pipeRadius, pipeInnerRadius).setColor(color);
+                    consumer.addVertex(pose, -pipeDisabledRadius, 1.0f - pipeRadius,  pipeInnerRadius).setColor(color);
+                    consumer.addVertex(pose, -pipeDisabledRadius, 1.0f - pipeRadius,  -pipeInnerRadius).setColor(color);
+
+                    // Positive z face
+                    consumer.addVertex(pose, -pipeInnerRadius, pipeRadius, pipeDisabledRadius).setColor(color);
+                    consumer.addVertex(pose, pipeInnerRadius, pipeRadius, pipeDisabledRadius).setColor(color);
+                    consumer.addVertex(pose, pipeInnerRadius, 1.0f - pipeRadius, pipeDisabledRadius).setColor(color);
+                    consumer.addVertex(pose, -pipeInnerRadius, 1.0f - pipeRadius, pipeDisabledRadius).setColor(color);
+
+                    // Negative z face
+                    consumer.addVertex(pose, pipeInnerRadius, pipeRadius, -pipeDisabledRadius).setColor(color);
+                    consumer.addVertex(pose, -pipeInnerRadius, pipeRadius, -pipeDisabledRadius).setColor(color);
+                    consumer.addVertex(pose, -pipeInnerRadius, 1.0f - pipeRadius, -pipeDisabledRadius).setColor(color);
+                    consumer.addVertex(pose, pipeInnerRadius, 1.0f - pipeRadius, -pipeDisabledRadius).setColor(color);
+                });
+            }
+            else nodeCollector.submitCustomGeometry(poseStack, pipeMaterial.renderType(RenderTypes::entitySolid), (PoseStack.Pose pose, VertexConsumer consumer) -> {
                 int color = 0xFFFFFFFF;
 
                 Vector3f normal = new Vector3f(-1, 0, 0);
 
-                consumer.addVertex(pose, -pipeRadius, pipeRadius, -pipeRadius)
+                consumer.addVertex(pose, -nodeRadius, nodeRadius, -nodeRadius)
                         .setUv(U0, V1).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
-                consumer.addVertex(pose, -pipeRadius, pipeRadius,  pipeRadius)
+                consumer.addVertex(pose, -nodeRadius, nodeRadius,  nodeRadius)
                         .setUv(U1, V1).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
-                consumer.addVertex(pose, -pipeRadius, 0.5f,        pipeRadius)
+                consumer.addVertex(pose, -nodeRadius, 0.5f,        nodeRadius)
                         .setUv(U1, V0).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
-                consumer.addVertex(pose, -pipeRadius, 0.5f,       -pipeRadius)
+                consumer.addVertex(pose, -nodeRadius, 0.5f,       -nodeRadius)
                         .setUv(U0, V0).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
 
                 normal.set(1, 0, 0);
 
-                consumer.addVertex(pose,  pipeRadius, pipeRadius,  pipeRadius)
+                consumer.addVertex(pose,  nodeRadius, nodeRadius,  nodeRadius)
                         .setUv(U0, V1).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
-                consumer.addVertex(pose,  pipeRadius, pipeRadius, -pipeRadius)
+                consumer.addVertex(pose,  nodeRadius, nodeRadius, -nodeRadius)
                         .setUv(U1, V1).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
-                consumer.addVertex(pose,  pipeRadius, 0.5f,       -pipeRadius)
+                consumer.addVertex(pose,  nodeRadius, 0.5f,       -nodeRadius)
                         .setUv(U1, V0).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
-                consumer.addVertex(pose,  pipeRadius, 0.5f,        pipeRadius)
+                consumer.addVertex(pose,  nodeRadius, 0.5f,        nodeRadius)
                         .setUv(U0, V0).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
 
                 normal.set(0, 0, -1);
 
-                consumer.addVertex(pose,  pipeRadius, pipeRadius, -pipeRadius)
+                consumer.addVertex(pose,  nodeRadius, nodeRadius, -nodeRadius)
                         .setUv(U0, V1).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
-                consumer.addVertex(pose, -pipeRadius, pipeRadius, -pipeRadius)
+                consumer.addVertex(pose, -nodeRadius, nodeRadius, -nodeRadius)
                         .setUv(U1, V1).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
-                consumer.addVertex(pose, -pipeRadius, 0.5f,       -pipeRadius)
+                consumer.addVertex(pose, -nodeRadius, 0.5f,       -nodeRadius)
                         .setUv(U1, V0).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
-                consumer.addVertex(pose,  pipeRadius, 0.5f,       -pipeRadius)
+                consumer.addVertex(pose,  nodeRadius, 0.5f,       -nodeRadius)
                         .setUv(U0, V0).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
 
                 normal.set(0, 0, 1);
 
-                consumer.addVertex(pose, -pipeRadius, pipeRadius,  pipeRadius)
+                consumer.addVertex(pose, -nodeRadius, nodeRadius,  nodeRadius)
                         .setUv(U0, V1).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
-                consumer.addVertex(pose,  pipeRadius, pipeRadius,  pipeRadius)
+                consumer.addVertex(pose,  nodeRadius, nodeRadius,  nodeRadius)
                         .setUv(U1, V1).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
-                consumer.addVertex(pose,  pipeRadius, 0.5f,        pipeRadius)
+                consumer.addVertex(pose,  nodeRadius, 0.5f,        nodeRadius)
                         .setUv(U1, V0).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
-                consumer.addVertex(pose, -pipeRadius, 0.5f,        pipeRadius)
+                consumer.addVertex(pose, -nodeRadius, 0.5f,        nodeRadius)
                         .setUv(U0, V0).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
 
                 normal.set(0, 1, 0);
 
-                consumer.addVertex(pose,  pipeRadius, pipeRadius,  pipeRadius)
+                consumer.addVertex(pose,  nodeRadius, nodeRadius,  nodeRadius)
                         .setUv(U0, V1).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
-                consumer.addVertex(pose, -pipeRadius, pipeRadius,  pipeRadius)
+                consumer.addVertex(pose, -nodeRadius, nodeRadius,  nodeRadius)
                         .setUv(U1, V1).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
-                consumer.addVertex(pose, -pipeRadius, pipeRadius, -pipeRadius)
+                consumer.addVertex(pose, -nodeRadius, nodeRadius, -nodeRadius)
                         .setUv(U1, V0).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
-                consumer.addVertex(pose,  pipeRadius, pipeRadius, -pipeRadius)
+                consumer.addVertex(pose,  nodeRadius, nodeRadius, -nodeRadius)
                         .setUv(U0, V0).setNormal(pose, normal).setLight(renderState.lightCoords).setOverlay(overlay).setColor(color);
             });
 

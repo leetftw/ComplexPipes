@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.block.model.VariantMutator;
 import net.minecraft.client.renderer.item.ClientItem;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.client.model.generators.template.ExtendedModelTemplateBuilder;
 
 import java.util.function.BiConsumer;
@@ -28,6 +29,9 @@ public class BlockModelProvider extends ModelProvider
     {
         super(output, MODID);
     }
+
+    private static final TextureSlot FRAME_SLOT = TextureSlot.create("frame");
+    private static final TextureSlot CORE_SLOT = TextureSlot.create("core");
 
     @Override
     protected void registerModels(BlockModelGenerators blockModels, ItemModelGenerators itemModels)
@@ -43,23 +47,31 @@ public class BlockModelProvider extends ModelProvider
             super(blockStateOutput, itemModelOutput, modelOutput);
         }
 
-        private void createPipeFrame(PipeType<?> pipeType)
+        private void createPipeFrame(Block block) {
+
+        }
+
+        private void createFilledPipe(PipeType<?> pipeType)
         {
             Identifier quarryFrameBase = Identifier.fromNamespaceAndPath(MODID, "block/pipe_base");
             Identifier quarryFrameExtension = Identifier.fromNamespaceAndPath(MODID, "block/pipe_extension");
 
+            TextureMapping mapping = new TextureMapping().put(FRAME_SLOT, pipeType.getFrameTexturePath().withPrefix("block/"))
+                    .put(CORE_SLOT, pipeType.getCoreTexturePath().withPrefix("block/"));
+
             // Create block models
-            TextureSlot slot = TextureSlot.create("0");
             quarryFrameBase = ExtendedModelTemplateBuilder.builder()
-                    .requiredTextureSlot(slot)
+                    .requiredTextureSlot(FRAME_SLOT)
+                    .requiredTextureSlot(CORE_SLOT)
                     .parent(quarryFrameBase)
                     .suffix("_base")
-                    .build().create(pipeType.getBlock(), new TextureMapping().put(slot, pipeType.getTexturePath().withPrefix("block/")), modelOutput);
+                    .build().create(pipeType.getBlock(), mapping, modelOutput);
             quarryFrameExtension = ExtendedModelTemplateBuilder.builder()
-                    .requiredTextureSlot(slot)
+                    .requiredTextureSlot(FRAME_SLOT)
+                    .requiredTextureSlot(CORE_SLOT)
                     .parent(quarryFrameExtension)
                     .suffix("_extension")
-                    .build().create(pipeType.getBlock(), new TextureMapping().put(slot, pipeType.getTexturePath().withPrefix("block/")), modelOutput);
+                    .build().create(pipeType.getBlock(), mapping, modelOutput);
 
             // Create block model definition
             Variant baseVariant = new Variant(quarryFrameBase);
@@ -85,8 +97,6 @@ public class BlockModelProvider extends ModelProvider
                             BlockModelGenerators.variant(extensionVariant)
                                     .with(VariantMutator.X_ROT.withValue(Quadrant.R90)));
 
-
-
             itemModelOutput.register(pipeType.getBlock().asItem(), new ClientItem(ItemModelUtils.plainModel(quarryFrameBase), ClientItem.Properties.DEFAULT));
             //blockStateOutput.accept(MultiVariantGenerator.dispatch(pipeType.getBlock(), BlockModelGenerators.variant(baseVariant)));
             blockStateOutput.accept(generator);
@@ -97,7 +107,7 @@ public class BlockModelProvider extends ModelProvider
         {
             createTrivialCube(BlockRegistry.EXAMPLE_BLOCK.get());
 
-            PipeTypeRegistry.forEach(this::createPipeFrame);
+            PipeTypeRegistry.forEach(this::createFilledPipe);
         }
     }
 

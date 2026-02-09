@@ -19,14 +19,16 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.leetftw.complexpipes.common.ComplexPipes.MODID;
 
 public class BuiltinPipeTypes {
-    private static final BiFunction<Integer, Predicate<PipeCard>, PipeType<ResourceHandler<ItemResource>>> ITEM_PIPE = (maxCards, supportsCard) -> new PipeType<>() {
+    private interface TriFunction<A, B, C, R> {
+        R apply(A a, B b, C c);
+    }
+
+    private static final TriFunction<Integer, Predicate<PipeCard>, Identifier, PipeType<ResourceHandler<ItemResource>>> ITEM_PIPE = (maxCards, supportsCard, frameTexture) -> new PipeType<>() {
         private PipeHandlerWrapper<ResourceHandler<ItemResource>> wrapper = null;
 
         @Override
@@ -69,8 +71,13 @@ public class BuiltinPipeTypes {
         }
 
         @Override
-        public Identifier getTexturePath() {
-            return Identifier.fromNamespaceAndPath(MODID, "item_pipe_frame");
+        public Identifier getFrameTexturePath() {
+            return frameTexture;
+        }
+
+        @Override
+        public Identifier getCoreTexturePath() {
+            return Identifier.fromNamespaceAndPath(MODID, "item_pipe_core");
         }
 
         @Override
@@ -84,7 +91,7 @@ public class BuiltinPipeTypes {
         }
     };
 
-    private static final BiFunction<Integer, Predicate<PipeCard>, PipeType<ResourceHandler<FluidResource>>> FLUID_PIPE = (maxCards, supportsCard) -> new PipeType<>() {
+    private static final TriFunction<Integer, Predicate<PipeCard>, Identifier, PipeType<ResourceHandler<FluidResource>>> FLUID_PIPE = (maxCards, supportsCard, frameTexture) -> new PipeType<>() {
         private PipeHandlerWrapper<ResourceHandler<FluidResource>> wrapper = null;
 
         @Override
@@ -127,8 +134,13 @@ public class BuiltinPipeTypes {
         }
 
         @Override
-        public Identifier getTexturePath() {
-            return Identifier.fromNamespaceAndPath(MODID, "fluid_pipe_frame");
+        public Identifier getFrameTexturePath() {
+            return frameTexture;
+        }
+
+        @Override
+        public Identifier getCoreTexturePath() {
+            return Identifier.fromNamespaceAndPath(MODID, "fluid_pipe_core");
         }
 
         @Override
@@ -142,7 +154,7 @@ public class BuiltinPipeTypes {
         }
     };
 
-    static final BiFunction<Integer, Predicate<PipeCard>, PipeType<EnergyHandler>> ENERGY_PIPE = (maxCards, supportsCard) -> new PipeType<>() {
+    static final TriFunction<Integer, Predicate<PipeCard>, Identifier, PipeType<EnergyHandler>> ENERGY_PIPE = (maxCards, supportsCard, frameTexture) -> new PipeType<>() {
         private PipeHandlerWrapper<EnergyHandler> wrapper = null;
 
         @Override
@@ -179,8 +191,13 @@ public class BuiltinPipeTypes {
         }
 
         @Override
-        public Identifier getTexturePath() {
-            return Identifier.fromNamespaceAndPath(MODID, "energy_pipe_frame");
+        public Identifier getFrameTexturePath() {
+            return frameTexture;
+        }
+
+        @Override
+        public Identifier getCoreTexturePath() {
+            return Identifier.fromNamespaceAndPath(MODID, "energy_pipe_core");
         }
 
         @Override
@@ -193,7 +210,6 @@ public class BuiltinPipeTypes {
             return supportsCard.test(upgrade);
         }
     };
-
 
     private static final List<PipeCardType> ITEM_PIPE_SUPPORTED_CARDS = List.of(
             BuiltinPipeCards.SPEED_UPGRADE,
@@ -210,25 +226,30 @@ public class BuiltinPipeTypes {
             BuiltinPipeCards.ENERGY_UPGRADE
     );
 
+    private static final Identifier BASE_FRAME_TEXTURE = Identifier.fromNamespaceAndPath(MODID, "basic_pipe_frame");
+    private static final Identifier ENHANCED_FRAME_TEXTURE = Identifier.fromNamespaceAndPath(MODID, "enhanced_pipe_frame");
+    private static final Identifier ADVANCED_FRAME_TEXTURE = Identifier.fromNamespaceAndPath(MODID, "advanced_pipe_frame");
+    private static final Identifier EXTREME_FRAME_TEXTURE = Identifier.fromNamespaceAndPath(MODID, "extreme_pipe_frame");
+
     private static final Predicate<PipeCard> BASIC_PIPE_SUPPORTS = PipeCard::isFilter;
     private static final Predicate<PipeCard> ITEM_PIPE_SUPPORTS = pipeCard -> ITEM_PIPE_SUPPORTED_CARDS.contains(pipeCard.getType()) || pipeCard instanceof RouterPipeCard;
     private static final Predicate<PipeCard> FLUID_PIPE_SUPPORTS = pipeCard -> FLUID_PIPE_SUPPORTED_CARDS.contains(pipeCard.getType()) || pipeCard instanceof RouterPipeCard;
     private static final Predicate<PipeCard> ENERGY_PIPE_SUPPORTS = pipeCard -> ENERGY_PIPE_SUPPORTED_CARDS.contains(pipeCard.getType()) || pipeCard instanceof RouterPipeCard;
 
-    public static final PipeType<ResourceHandler<ItemResource>> BASIC_ITEM_PIPE = ITEM_PIPE.apply(1, ITEM_PIPE_SUPPORTS.and(BASIC_PIPE_SUPPORTS));
-    public static final PipeType<ResourceHandler<ItemResource>> ENHANCED_ITEM_PIPE = ITEM_PIPE.apply(3, ITEM_PIPE_SUPPORTS);
-    public static final PipeType<ResourceHandler<ItemResource>> ADVANCED_ITEM_PIPE = ITEM_PIPE.apply(6, ITEM_PIPE_SUPPORTS);
-    public static final PipeType<ResourceHandler<ItemResource>> EXTREME_ITEM_PIPE = ITEM_PIPE.apply(12, ITEM_PIPE_SUPPORTS);
+    public static final PipeType<ResourceHandler<ItemResource>> BASIC_ITEM_PIPE = ITEM_PIPE.apply(1, ITEM_PIPE_SUPPORTS.and(BASIC_PIPE_SUPPORTS), BASE_FRAME_TEXTURE);
+    public static final PipeType<ResourceHandler<ItemResource>> ENHANCED_ITEM_PIPE = ITEM_PIPE.apply(3, ITEM_PIPE_SUPPORTS, ENHANCED_FRAME_TEXTURE);
+    public static final PipeType<ResourceHandler<ItemResource>> ADVANCED_ITEM_PIPE = ITEM_PIPE.apply(6, ITEM_PIPE_SUPPORTS, ADVANCED_FRAME_TEXTURE);
+    public static final PipeType<ResourceHandler<ItemResource>> EXTREME_ITEM_PIPE = ITEM_PIPE.apply(12, ITEM_PIPE_SUPPORTS, EXTREME_FRAME_TEXTURE);
 
-    public static final PipeType<ResourceHandler<FluidResource>> BASIC_FLUID_PIPE = FLUID_PIPE.apply(1, FLUID_PIPE_SUPPORTS.and(BASIC_PIPE_SUPPORTS));
-    public static final PipeType<ResourceHandler<FluidResource>> ENHANCED_FLUID_PIPE = FLUID_PIPE.apply(3, FLUID_PIPE_SUPPORTS);
-    public static final PipeType<ResourceHandler<FluidResource>> ADVANCED_FLUID_PIPE = FLUID_PIPE.apply(6, FLUID_PIPE_SUPPORTS);
-    public static final PipeType<ResourceHandler<FluidResource>> EXTREME_FLUID_PIPE = FLUID_PIPE.apply(12, FLUID_PIPE_SUPPORTS);
+    public static final PipeType<ResourceHandler<FluidResource>> BASIC_FLUID_PIPE = FLUID_PIPE.apply(1, FLUID_PIPE_SUPPORTS.and(BASIC_PIPE_SUPPORTS), BASE_FRAME_TEXTURE);
+    public static final PipeType<ResourceHandler<FluidResource>> ENHANCED_FLUID_PIPE = FLUID_PIPE.apply(3, FLUID_PIPE_SUPPORTS, ENHANCED_FRAME_TEXTURE);
+    public static final PipeType<ResourceHandler<FluidResource>> ADVANCED_FLUID_PIPE = FLUID_PIPE.apply(6, FLUID_PIPE_SUPPORTS, ADVANCED_FRAME_TEXTURE);
+    public static final PipeType<ResourceHandler<FluidResource>> EXTREME_FLUID_PIPE = FLUID_PIPE.apply(12, FLUID_PIPE_SUPPORTS, EXTREME_FRAME_TEXTURE);
 
-    public static final PipeType<EnergyHandler> BASIC_ENERGY_PIPE = ENERGY_PIPE.apply(0, a -> false);
-    public static final PipeType<EnergyHandler> ENHANCED_ENERGY_PIPE = ENERGY_PIPE.apply(3, ENERGY_PIPE_SUPPORTS);
-    public static final PipeType<EnergyHandler> ADVANCED_ENERGY_PIPE = ENERGY_PIPE.apply(6, ENERGY_PIPE_SUPPORTS);
-    public static final PipeType<EnergyHandler> EXTREME_ENERGY_PIPE = ENERGY_PIPE.apply(12, ENERGY_PIPE_SUPPORTS);
+    public static final PipeType<EnergyHandler> BASIC_ENERGY_PIPE = ENERGY_PIPE.apply(0, a -> false, BASE_FRAME_TEXTURE);
+    public static final PipeType<EnergyHandler> ENHANCED_ENERGY_PIPE = ENERGY_PIPE.apply(3, ENERGY_PIPE_SUPPORTS, ENHANCED_FRAME_TEXTURE);
+    public static final PipeType<EnergyHandler> ADVANCED_ENERGY_PIPE = ENERGY_PIPE.apply(6, ENERGY_PIPE_SUPPORTS, ADVANCED_FRAME_TEXTURE);
+    public static final PipeType<EnergyHandler> EXTREME_ENERGY_PIPE = ENERGY_PIPE.apply(12, ENERGY_PIPE_SUPPORTS, EXTREME_FRAME_TEXTURE);
 
     public static void registerTypes() {
         PipeTypeRegistry.registerType("basic_item_pipe", BASIC_ITEM_PIPE);

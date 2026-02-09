@@ -39,8 +39,8 @@ public class PipeConnectionScreen extends AbstractContainerScreen<PipeConnection
         box.setInvertHighlightedTextColor(false);
         box.setBordered(true);
         box.setMaxLength(50);
-        box.setResponder(this::onNameChanged);
         box.setValue("");
+        box.setResponder(this::onNameChanged);
     }
 
     @Override
