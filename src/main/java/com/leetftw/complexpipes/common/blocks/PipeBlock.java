@@ -87,6 +87,10 @@ public class PipeBlock extends Block implements EntityBlock
                 .setValue(DOWN_CON, false));
     }
 
+    public PipeType<?> getType() {
+        return TYPE;
+    }
+
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context)
     {

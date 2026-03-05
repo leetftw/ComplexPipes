@@ -41,5 +41,8 @@
   "complexpipes.configuration.renderPipeAsBlockEntity": "Render Pipes as Block Entities",
   "complexpipes.configuration.itemPipeTransferRate": "Base Transfer Rate for Item Pipes (items/op)",
   "complexpipes.configuration.fluidPipeTransferRate": "Base Transfer Rate for Fluid Pipes (mb/op)",
-  "complexpipes.configuration.energyPipeTransferRate": "Base Transfer Rate for Energy Pipes (FE/op)"
+  "complexpipes.configuration.energyPipeTransferRate": "Base Transfer Rate for Energy Pipes (FE/op)",
+
+  "tooltip.complexpipes.supportedCards": "Supported cards:",
+  "tooltip.complexpipes.supportedCardEntry": " - %s"
 }

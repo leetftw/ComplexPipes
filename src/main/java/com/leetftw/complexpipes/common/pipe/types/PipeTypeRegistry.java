@@ -2,6 +2,7 @@ package com.leetftw.complexpipes.common.pipe.types;
 
 import com.leetftw.complexpipes.common.blocks.PipeBlock;
 import com.leetftw.complexpipes.common.blocks.PipeBlockEntity;
+import com.leetftw.complexpipes.common.items.PipeBlockItem;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -75,7 +76,7 @@ public class PipeTypeRegistry {
                         for (Map.Entry<String, PipeType<?>> type : registeredTypes.entrySet()) {
                             Identifier id = Identifier.fromNamespaceAndPath(MODID, type.getKey());
                             //PipeBlock block = new PipeBlock(Block.Properties.of().setId(ResourceKey.create(BuiltInRegistries.BLOCK.key(), id)).noOcclusion().dynamicShape(), type.getValue());
-                            BlockItem item = new BlockItem(type.getValue().getBlock(), new Item.Properties()
+                            BlockItem item = new PipeBlockItem(type.getValue().getBlock(), new Item.Properties()
                                     .setId(ResourceKey.create(BuiltInRegistries.ITEM.key(), id))
                                     .useBlockDescriptionPrefix());
                             registry.register(id, item);

@@ -40,7 +40,7 @@ public class PipeConnectionMenu extends AbstractContainerMenu {
 
         @Override
         public boolean isEmpty() {
-            return pipeConnection.getCardStream().noneMatch(Objects::nonNull);
+            return pipeConnection.getCardStream().findAny().isPresent();
         }
 
         @Override

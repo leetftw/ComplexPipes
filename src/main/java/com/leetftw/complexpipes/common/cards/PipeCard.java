@@ -52,4 +52,8 @@ public abstract class PipeCard {
 
     @Override
     public abstract int hashCode();
+
+    public boolean compatibleWith(PipeCard card) {
+        return true;
+    };
 }

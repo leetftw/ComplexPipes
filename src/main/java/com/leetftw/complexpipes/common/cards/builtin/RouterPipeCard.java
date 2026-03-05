@@ -52,4 +52,9 @@ public class RouterPipeCard extends PipeCard {
     public int hashCode() {
         return "RouterPipeCard".hashCode() * 17 + strategyId.hashCode();
     }
+
+    @Override
+    public boolean compatibleWith(PipeCard card) {
+        return !(card instanceof RouterPipeCard);
+    }
 }

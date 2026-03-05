@@ -144,7 +144,7 @@ public class PipeConnection {
     }
 
     public Stream<PipeCard> getCardStream() {
-        return Arrays.stream(pipeCards);
+        return Arrays.stream(pipeCards).filter(Objects::nonNull);
     }
 
     public PipeCard getCardInSlot(int slot) {
@@ -187,11 +187,11 @@ public class PipeConnection {
 
     public boolean mayAddCard(PipeCard card) {
         // Max 6 card
-        if (Arrays.stream(pipeCards).filter(Objects::nonNull).count() == MAX_CARDS)
+        if (getCardStream().count() == MAX_CARDS)
             return false;
 
         // Adding this card should not exceed max upgrades for this type
-        if (card.getMaxInstalledCount() == Arrays.stream(pipeCards).filter(Objects::nonNull)
+        if (card.getMaxInstalledCount() == getCardStream()
                 .filter(existingUpgrade -> existingUpgrade.getType() == card.getType()).count())
             return false;
 
@@ -199,9 +199,9 @@ public class PipeConnection {
         if (!TYPE.supportsCard(card))
             return false;
 
-        // TODO: The card should be compatible with the other cards
-
-        return true;
+        // The card should be compatible with the other cards
+        return getCardStream().noneMatch(existingCard ->
+                !existingCard.compatibleWith(card) || !card.compatibleWith(existingCard));
     }
 
     public boolean tryAddCard(PipeCard card) {
