@@ -1,17 +1,14 @@
 package com.leetftw.complexpipes.client.render.block_entity;
 
 import com.leetftw.complexpipes.client.ClientConfig;
-import com.leetftw.complexpipes.common.ServerConfig;
 import com.leetftw.complexpipes.common.blocks.PipeBlockEntity;
 import com.leetftw.complexpipes.common.pipe.network.ClientPipeConnection;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnectionMode;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.renderer.MaterialMapper;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.block.model.BlockModelPart;
 import net.minecraft.client.renderer.block.model.BlockStateModel;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -22,23 +19,13 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.Material;
-import net.minecraft.data.AtlasIds;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity, PipeRenderState> {
-    public PipeRenderer(BlockEntityRendererProvider.Context context) {
-
-        //Identifier baseModel = Identifier.fromNamespaceAndPath(MODID, "quarry_frame");
-    }
-
+    public PipeRenderer(BlockEntityRendererProvider.Context context) { }
 
     @Override
     public PipeRenderState createRenderState() {
@@ -86,10 +73,11 @@ public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity, PipeRe
             poseStack.mulPose(connection.side().getRotation());
             // Block is [-0.5,0.5] in all axes
 
+            // TODO: Build models for this instead of hardcoding quads
             if (connection.mode() == PipeConnectionMode.DISABLED) {
                 nodeCollector.submitCustomGeometry(poseStack, RenderTypes.debugQuads(), (PoseStack.Pose pose, VertexConsumer consumer) -> {
                     // Draw four quads inside pipe frame to cover up gaps when disabled
-
+                    // TODO: Create a texture for this instead of hardcoding colors
                     int color = 0xFF333333;
 
                     // Positive x face
