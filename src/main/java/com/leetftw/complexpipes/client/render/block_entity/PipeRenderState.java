@@ -1,6 +1,6 @@
 package com.leetftw.complexpipes.client.render.block_entity;
 
-import com.leetftw.complexpipes.common.blocks.PipeBlockEntity;
+import com.leetftw.complexpipes.common.block_entities.PipeBlockEntity;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 
 public class PipeRenderState extends BlockEntityRenderState {

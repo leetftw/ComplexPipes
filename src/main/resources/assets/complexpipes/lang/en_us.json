@@ -30,7 +30,6 @@
   "block.complexpipes.extreme_fluid_pipe": "Extreme Fluid Pipe",
   "block.complexpipes.extreme_energy_pipe": "Extreme Energy Pipe",
 
-
   "item.complexpipes.speed_upgrade": "Speed Upgrade",
   "item.complexpipes.stack_upgrade": "Stack Upgrade",
   "item.complexpipes.energy_upgrade": "Energy Upgrade",
@@ -43,6 +42,8 @@
   "complexpipes.configuration.fluidPipeTransferRate": "Base Transfer Rate for Fluid Pipes (mb/op)",
   "complexpipes.configuration.energyPipeTransferRate": "Base Transfer Rate for Energy Pipes (FE/op)",
 
-  "tooltip.complexpipes.supportedCards": "Supported cards:",
+  "tooltip.complexpipes.speed": "Speed: %s ticks per operation",
+  "tooltip.complexpipes.rate": "Transfer rate: %s per operation",
+  "tooltip.complexpipes.supportedCards": "Supported cards (max %s):",
   "tooltip.complexpipes.supportedCardEntry": " - %s"
 }

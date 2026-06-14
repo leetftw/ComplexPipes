@@ -1,7 +1,7 @@
 package com.leetftw.complexpipes.client.gui;
 
 import com.leetftw.complexpipes.common.gui.ItemStackFilterMenu;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
@@ -14,21 +14,20 @@ public class ItemStackFilterScreen extends AbstractContainerScreen<ItemStackFilt
     private static final int containerRows = 1;
 
     public ItemStackFilterScreen(ItemStackFilterMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, title);
+        super(menu, playerInventory, title, 176, 114 + containerRows * 18);
 
-        this.imageHeight = 114 + containerRows * 18;
         this.inventoryLabelY = this.imageHeight - 94;
     }
 
     @Override
-    public void render(@NonNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
+    public void extractRenderState(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick)
     {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+        this.extractTooltip(guiGraphics, mouseX, mouseY);
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+    public void extractBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         int i = (this.width - this.imageWidth) / 2;
         int j = (this.height - this.imageHeight) / 2;
         guiGraphics.blit(RenderPipelines.GUI_TEXTURED, CONTAINER_BACKGROUND, i, j, 0.0F, 0.0F, this.imageWidth, containerRows * 18 + 17, 256, 256);
@@ -36,7 +35,7 @@ public class ItemStackFilterScreen extends AbstractContainerScreen<ItemStackFilt
     }
 
     @Override
-    protected void renderLabels(@NonNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        super.renderLabels(guiGraphics, mouseX, mouseY);
+    protected void extractLabels(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
+        super.extractLabels(guiGraphics, mouseX, mouseY);
     }
 }

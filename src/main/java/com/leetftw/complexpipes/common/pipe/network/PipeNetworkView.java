@@ -2,7 +2,7 @@ package com.leetftw.complexpipes.common.pipe.network;
 
 import com.leetftw.complexpipes.common.ComplexPipes;
 import com.leetftw.complexpipes.common.blocks.PipeBlock;
-import com.leetftw.complexpipes.common.blocks.PipeBlockEntity;
+import com.leetftw.complexpipes.common.block_entities.PipeBlockEntity;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

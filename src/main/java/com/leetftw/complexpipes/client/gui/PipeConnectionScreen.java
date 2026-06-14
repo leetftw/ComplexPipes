@@ -2,7 +2,7 @@ package com.leetftw.complexpipes.client.gui;
 
 import com.leetftw.complexpipes.common.gui.PipeConnectionMenu;
 import com.leetftw.complexpipes.common.network.PipeScreenNumericSyncPayload;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -25,10 +25,10 @@ public class PipeConnectionScreen extends AbstractContainerScreen<PipeConnection
     int lastRatio = Integer.MAX_VALUE;
 
     public PipeConnectionScreen(PipeConnectionMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, title);
+        int contRows = (menu.getPipeConnection().getMaxCards() + 8) / 9;
+        super(menu, playerInventory, title, 176, 114 + contRows * 18);
 
-        this.containerRows = (menu.getPipeConnection().getMaxCards() + 8) / 9;
-        this.imageHeight = 114 + containerRows * 18;
+        this.containerRows = contRows;
         this.inventoryLabelY = this.imageHeight - 94;
     }
 
@@ -130,14 +130,14 @@ public class PipeConnectionScreen extends AbstractContainerScreen<PipeConnection
     }
 
     @Override
-    public void render(@NonNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
+    public void extractRenderState(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick)
     {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+        this.extractTooltip(guiGraphics, mouseX, mouseY);
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+    public void extractBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         int i = (this.width - this.imageWidth) / 2;
         int j = (this.height - this.imageHeight) / 2;
 
@@ -166,13 +166,13 @@ public class PipeConnectionScreen extends AbstractContainerScreen<PipeConnection
     }
 
     @Override
-    protected void renderLabels(@NonNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        super.renderLabels(guiGraphics, mouseX, mouseY);
+    protected void extractLabels(@NonNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
+        super.extractLabels(guiGraphics, mouseX, mouseY);
 
-        guiGraphics.drawString(font, "Priority:", inventoryLabelX, containerRows * 18 + 20, -12566464, false);
-        guiGraphics.drawString(font, "Ratio:", inventoryLabelX, containerRows * 18 + 20 + 12, -12566464, false);
-        guiGraphics.drawString(font, "Current transfer per operation: " + menu.getPipeConnection().calculateTransferRate(), 0, -24, 0xFFFFFFFF, false);
-        guiGraphics.drawString(font, "Current operation time: " + menu.getPipeConnection().calculateOperationTime() + " ticks", 0, -12, 0xFFFFFFFF, false);
+        guiGraphics.text(font, "Priority:", inventoryLabelX, containerRows * 18 + 20, -12566464, false);
+        guiGraphics.text(font, "Ratio:", inventoryLabelX, containerRows * 18 + 20 + 12, -12566464, false);
+        guiGraphics.text(font, "Current transfer per operation: " + menu.getPipeConnection().calculateTransferRate(), 0, -24, 0xFFFFFFFF, false);
+        guiGraphics.text(font, "Current operation time: " + menu.getPipeConnection().calculateOperationTime() + " ticks", 0, -12, 0xFFFFFFFF, false);
     }
 
     @Override

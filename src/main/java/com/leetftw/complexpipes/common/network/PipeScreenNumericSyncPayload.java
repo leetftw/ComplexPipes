@@ -1,6 +1,6 @@
 package com.leetftw.complexpipes.common.network;
 
-import com.leetftw.complexpipes.common.blocks.PipeBlockEntity;
+import com.leetftw.complexpipes.common.block_entities.PipeBlockEntity;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnection;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.BlockPos;
@@ -9,7 +9,6 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.network.handling.IPayloadContext;

@@ -4,12 +4,9 @@ import com.leetftw.complexpipes.client.gui.ItemStackFilterScreen;
 import com.leetftw.complexpipes.client.gui.PipeConnectionScreen;
 import com.leetftw.complexpipes.client.render.block_entity.PipeRenderer;
 import com.leetftw.complexpipes.common.ComplexPipes;
-import com.leetftw.complexpipes.common.blocks.PipeBlockEntity;
 import com.leetftw.complexpipes.common.gui.MenuRegistry;
 import com.leetftw.complexpipes.common.pipe.types.PipeTypeRegistry;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -22,8 +19,6 @@ import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
-import net.neoforged.neoforge.network.registration.HandlerThread;
 
 // This class will not load on dedicated servers. Accessing client side code from here is safe.
 @Mod(value = ComplexPipes.MODID, dist = Dist.CLIENT)
@@ -35,7 +30,6 @@ public class ComplexPipesClient {
         // The config screen is accessed by going to the Mods screen > clicking on your mod > clicking on config.
         // Do not forget to add translations for your config options to the en_us.json file.
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
-
 
         // Register config
         container.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);

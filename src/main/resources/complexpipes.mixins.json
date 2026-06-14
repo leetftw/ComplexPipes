@@ -1,0 +1,6 @@
+{
+  "mixins": [
+    "MixinTest"
+  ],
+  "package": "com.leetftw.complexpipes.common.mixin"
+}

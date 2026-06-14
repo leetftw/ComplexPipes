@@ -2,6 +2,7 @@ package com.leetftw.complexpipes.common.blocks;
 
 import com.leetftw.complexpipes.client.ClientConfig;
 import com.leetftw.complexpipes.common.ComplexPipes;
+import com.leetftw.complexpipes.common.block_entities.PipeBlockEntity;
 import com.leetftw.complexpipes.common.gui.PipeConnectionMenu;
 import com.leetftw.complexpipes.common.items.ItemComponentRegistry;
 import com.leetftw.complexpipes.common.items.ItemRegistry;
@@ -10,15 +11,11 @@ import com.leetftw.complexpipes.common.pipe.network.PipeConnection;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnectionMode;
 import com.leetftw.complexpipes.common.pipe.network.PipeNetworkView;
 import com.leetftw.complexpipes.common.pipe.types.PipeType;
-import com.leetftw.complexpipes.common.pipe.types.PipeTypeRegistry;
-import com.mojang.serialization.Codec;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -53,68 +50,18 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 
-public class PipeBlock extends Block implements EntityBlock
+public class PipeBlock extends PipeFrameBlock implements EntityBlock
 {
-    public static final BooleanProperty NORTH_CON = BooleanProperty.create("north");
-    public static final BooleanProperty EAST_CON = BooleanProperty.create("east");
-    public static final BooleanProperty SOUTH_CON = BooleanProperty.create("south");
-    public static final BooleanProperty WEST_CON = BooleanProperty.create("west");
-    public static final BooleanProperty UP_CON = BooleanProperty.create("up");
-    public static final BooleanProperty DOWN_CON = BooleanProperty.create("down");
-
-    public static final Map<Direction, BooleanProperty> CONNECTION_MAP = Map.of(
-            Direction.NORTH, NORTH_CON,
-            Direction.EAST, EAST_CON,
-            Direction.SOUTH, SOUTH_CON,
-            Direction.WEST, WEST_CON,
-            Direction.UP, UP_CON,
-            Direction.DOWN, DOWN_CON
-    );
-
     public final PipeType<?> TYPE;
 
     public PipeBlock(Properties properties, PipeType<?> pipeType)
     {
-        super(properties);
+        super(properties, true);
         TYPE = pipeType;
-
-        registerDefaultState(defaultBlockState()
-                .setValue(NORTH_CON, false)
-                .setValue(EAST_CON, false)
-                .setValue(SOUTH_CON, false)
-                .setValue(WEST_CON, false)
-                .setValue(UP_CON, false)
-                .setValue(DOWN_CON, false));
     }
 
     public PipeType<?> getType() {
         return TYPE;
-    }
-
-    @Override
-    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context)
-    {
-        VoxelShape shape = Shapes.box(5 / 16.0, 5 / 16.0, 5 / 16.0,
-                11 / 16.0, 11 / 16.0, 11 / 16.0);
-        if (state.getValue(NORTH_CON))
-            shape = Shapes.or(shape, Shapes.box(5 / 16.0, 5 / 16.0, 0f,
-                    11 / 16.0, 11 / 16.0, 5 / 16.0));
-        if (state.getValue(EAST_CON))
-            shape = Shapes.or(shape, Shapes.box(11 / 16.0, 5 / 16.0, 5 / 16.0,
-                    1.0, 11 / 16.0, 11 / 16.0));
-        if (state.getValue(SOUTH_CON))
-            shape = Shapes.or(shape, Shapes.box(5 / 16.0, 5 / 16.0, 11 / 16.0,
-                    11 / 16.0, 11 / 16.0, 1.0));
-        if (state.getValue(WEST_CON))
-            shape = Shapes.or(shape, Shapes.box(0, 5 / 16.0, 5 / 16.0,
-                    5 / 16.0, 11 / 16.0, 11 / 16.0));
-        if (state.getValue(UP_CON))
-            shape = Shapes.or(shape, Shapes.box(5 / 16.0, 11 / 16.0, 5 / 16.0,
-                    11 / 16.0, 1.0, 11 / 16.0));
-        if (state.getValue(DOWN_CON))
-            shape = Shapes.or(shape, Shapes.box(5 / 16.0, 0, 5 / 16.0,
-                    11 / 16.0, 5 / 16.0, 11 / 16.0));
-        return shape;
     }
 
     @Override
@@ -123,18 +70,7 @@ public class PipeBlock extends Block implements EntityBlock
     }
 
     @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder)
-    {
-        super.createBlockStateDefinition(builder);
-        builder.add(NORTH_CON);
-        builder.add(EAST_CON);
-        builder.add(SOUTH_CON);
-        builder.add(WEST_CON);
-        builder.add(UP_CON);
-        builder.add(DOWN_CON);
-    }
-
-    private BlockState getStateForPos(BlockState state, Level level, BlockPos pos)
+    protected BlockState getStateForPos(BlockState state, Level level, BlockPos pos)
     {
         for (Direction direction : Direction.values())
         {
@@ -173,11 +109,6 @@ public class PipeBlock extends Block implements EntityBlock
                 pipeBE.setNetworkView(PipeNetworkView.scanBlocks(serverLevel, pos));
             }
         }
-    }
-    @Override
-    public @Nullable BlockState getStateForPlacement(BlockPlaceContext context)
-    {
-        return getStateForPos(defaultBlockState(), context.getLevel(), context.getClickedPos());
     }
 
     private InteractionResult performHitAction(BlockPos pos, BlockHitResult hitResult, Function<Direction, InteractionResult> axisHandler, Supplier<InteractionResult> centerHandler) {
@@ -229,16 +160,16 @@ public class PipeBlock extends Block implements EntityBlock
         if (!level.isClientSide()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof PipeBlockEntity pipeBE) {
-                if (pipeBE.networkView == null)
+                if (pipeBE.getNetworkView() == null)
                     return null;
                 Component header = Component.literal(String.format(
                         "%-14s | %-4s | %-9s | %4s | %5s | %7s",
                         "Pos", "Side", "Mode", "Prio", "Ratio", "Rate/t"
                 )).withStyle(ChatFormatting.GRAY);
 
-                player.displayClientMessage(header, false);
+                player.sendSystemMessage(header);
 
-                for (PipeConnection c : pipeBE.networkView.connections) {
+                for (PipeConnection c : pipeBE.getNetworkView().connections) {
                     Component line = Component.literal(String.format(
                             "%-14s | %-4s | %-9s | %4d | %5d | ~%6d",
                             c.getPipePos().toShortString(),
@@ -249,7 +180,7 @@ public class PipeBlock extends Block implements EntityBlock
                             Double.valueOf(c.calculateResourcesPerTick()).intValue()
                     )).withStyle(ChatFormatting.WHITE);
 
-                    player.displayClientMessage(line, false);
+                    player.sendSystemMessage(line);
                 }
             }
         }
@@ -284,7 +215,7 @@ public class PipeBlock extends Block implements EntityBlock
             if (connectionOptional.isEmpty()) {
                 // Add a disabled connection if there is no connection at all
                 pipeBE.setDisabled(axis);
-                if (pipeBE.networkView != null) pipeBE.networkView.invalidate();
+                if (pipeBE.getNetworkView() != null) pipeBE.getNetworkView().invalidate();
                 return InteractionResult.SUCCESS;
             }
 
@@ -293,12 +224,12 @@ public class PipeBlock extends Block implements EntityBlock
             if (connection.getMode() == PipeConnectionMode.DISABLED) {
                 connection.setMode(PipeConnectionMode.PASSIVE);
                 pipeBE.setChanged();
-                if (pipeBE.networkView != null) pipeBE.networkView.invalidate();
+                if (pipeBE.getNetworkView() != null) pipeBE.getNetworkView().invalidate();
                 return InteractionResult.SUCCESS;
             } else if (connection.getMode() == PipeConnectionMode.PASSIVE) {
                 connection.setMode(PipeConnectionMode.DISABLED);
                 pipeBE.setChanged();
-                if (pipeBE.networkView != null) pipeBE.networkView.invalidate();
+                if (pipeBE.getNetworkView() != null) pipeBE.getNetworkView().invalidate();
                 return InteractionResult.SUCCESS;
             }
 
@@ -315,7 +246,7 @@ public class PipeBlock extends Block implements EntityBlock
 
             connection.setMode(PipeConnectionMode.PASSIVE);
             pipeBE.setChanged();
-            if (pipeBE.networkView != null) pipeBE.networkView.invalidate();
+            if (pipeBE.getNetworkView() != null) pipeBE.getNetworkView().invalidate();
             return InteractionResult.SUCCESS;
         }
 
@@ -353,7 +284,7 @@ public class PipeBlock extends Block implements EntityBlock
         if (!added) return InteractionResult.FAIL;
 
         // Inform player and consume item
-        player.displayClientMessage(Component.literal("Installed ").append(stack.getDisplayName()), true);
+        player.sendOverlayMessage(Component.literal("Installed ").append(stack.getDisplayName()));
         stack.consume(1, player);
         return InteractionResult.CONSUME;
     }

@@ -31,12 +31,16 @@ public class PipeBlockItem extends BlockItem {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay tooltipDisplay, Consumer<Component> tooltipAdder, TooltipFlag flag) {
         Style style = Style.EMPTY.withColor(TextColor.fromLegacyFormat(ChatFormatting.DARK_GRAY));
-        tooltipAdder.accept(Component.translatable("tooltip.complexpipes.supportedCards")
-                .setStyle(style));
+
+        tooltipAdder.accept(Component.translatable("tooltip.complexpipes.speed", pipeBlock.getType().getDefaultTransferSpeed()).setStyle(style));
+        tooltipAdder.accept(Component.translatable("tooltip.complexpipes.rate", pipeBlock.getType().getDefaultTransferAmount()).setStyle(style));
+
+        tooltipAdder.accept(Component.translatable("tooltip.complexpipes.supportedCards", pipeBlock.getType().getMaxCards()).setStyle(style));
+
         PipeCardRegistry.PIPE_CARD_TYPE_REGISTRY.forEach(cardType -> {
             PipeCard instance = cardType.instantiate();
             if (pipeBlock.getType().supportsCard(instance)) {
-                tooltipAdder.accept(Component.translatable("tooltip.complexpipes.supportedCardEntry", cardType.getItem().getName()).setStyle(style));
+                tooltipAdder.accept(Component.translatable("tooltip.complexpipes.supportedCardEntry", new ItemStack(cardType.getItem()).getItemName()).setStyle(style));
             }
         });
 

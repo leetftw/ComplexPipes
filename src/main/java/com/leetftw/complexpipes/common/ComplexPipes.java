@@ -1,5 +1,8 @@
 package com.leetftw.complexpipes.common;
 
+import com.leetftw.complexpipes.common.block_entities.BlockEntityRegistry;
+import com.leetftw.complexpipes.common.crafting.RecipeTypeRegistry;
+import com.leetftw.complexpipes.common.fluids.FluidRegistry;
 import com.leetftw.complexpipes.common.gui.MenuRegistry;
 import com.leetftw.complexpipes.common.items.ItemComponentRegistry;
 import com.leetftw.complexpipes.common.items.creative.CreativeModeTabRegistry;
@@ -35,7 +38,6 @@ public class ComplexPipes {
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
     public ComplexPipes(IEventBus modEventBus, ModContainer modContainer) {
         // Register vanilla registries
-        BlockRegistry.BLOCKS.register(modEventBus);
         ItemRegistry.ITEMS.register(modEventBus);
         ItemComponentRegistry.COMPONENTS.register(modEventBus);
         MenuRegistry.MENUS.register(modEventBus);
@@ -43,9 +45,14 @@ public class ComplexPipes {
         GameRuleRegistry.GAME_RULE_REGISTRY.register(modEventBus);
         GameTestRegistry.TEST_FUNCTION_REGISTRY.register(modEventBus);
 
+
         // Register custom registries
+        BlockRegistry.register(modEventBus);
+        BlockEntityRegistry.register(modEventBus);
         PipeTypeRegistry.register(modEventBus);
         PipeCardRegistry.register(modEventBus);
+        RecipeTypeRegistry.register(modEventBus);
+        FluidRegistry.register(modEventBus);
 
         // Register network packets
         modEventBus.addListener(ComplexPipes::registerPayloads);

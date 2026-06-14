@@ -2,6 +2,7 @@ package com.leetftw.complexpipes.client.datagen;
 
 import com.leetftw.complexpipes.client.datagen.providers.BlockLootTableProvider;
 import com.leetftw.complexpipes.client.datagen.providers.BlockModelProvider;
+import com.leetftw.complexpipes.client.datagen.providers.ItemMelterRecipeProvider;
 import com.leetftw.complexpipes.client.datagen.providers.PipeRecipeProvider;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.DataGenerator;
@@ -36,5 +37,6 @@ public class DataGenerators
 
         event.createProvider(BlockModelProvider::new);
         event.createProvider(PipeRecipeProvider.Runner::new);
+        event.createProvider(ItemMelterRecipeProvider.Runner::new);
     }
 }

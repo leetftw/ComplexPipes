@@ -1,7 +1,7 @@
 package com.leetftw.complexpipes.common.pipe.types;
 
 import com.leetftw.complexpipes.common.blocks.PipeBlock;
-import com.leetftw.complexpipes.common.blocks.PipeBlockEntity;
+import com.leetftw.complexpipes.common.block_entities.PipeBlockEntity;
 import com.leetftw.complexpipes.common.items.PipeBlockItem;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -22,8 +22,8 @@ import static com.leetftw.complexpipes.common.ComplexPipes.MODID;
 
 public class PipeTypeRegistry {
     private static boolean registryFixed = false;
-    private static HashMap<String, PipeType<?>> registeredTypes = new HashMap<>();
-    private static List<String> keys = new ArrayList<>();
+    private static final LinkedHashMap<String, PipeType<?>> registeredTypes = new LinkedHashMap<>();
+    private static final List<String> keys = new ArrayList<>();
 
     public static <T> void registerType(String name, PipeType<T> type) {
         if (registryFixed)
@@ -57,6 +57,7 @@ public class PipeTypeRegistry {
             event.register(
                     BuiltInRegistries.BLOCK.key(),
                     registry -> {
+                        registryFixed = true;
                         for (Map.Entry<String, PipeType<?>> type : registeredTypes.entrySet()) {
                             Identifier id = Identifier.fromNamespaceAndPath(MODID, type.getKey());
                             PipeBlock block = new PipeBlock(Block.Properties.of().setId(ResourceKey.create(BuiltInRegistries.BLOCK.key(), id)).noOcclusion().dynamicShape(), type.getValue());

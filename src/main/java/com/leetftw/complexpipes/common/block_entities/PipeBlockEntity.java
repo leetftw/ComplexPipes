@@ -1,5 +1,6 @@
-package com.leetftw.complexpipes.common.blocks;
+package com.leetftw.complexpipes.common.block_entities;
 
+import com.leetftw.complexpipes.common.blocks.PipeBlock;
 import com.leetftw.complexpipes.common.pipe.network.ClientPipeConnection;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnection;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnectionMode;
@@ -45,6 +46,10 @@ public class PipeBlockEntity extends BlockEntity {
 
     public void setNetworkView(@Nullable PipeNetworkView networkView) {
         this.networkView = networkView;
+    }
+
+    public @Nullable PipeNetworkView getNetworkView() {
+        return networkView;
     }
 
     // Called on block tick
@@ -222,7 +227,7 @@ public class PipeBlockEntity extends BlockEntity {
 
         if (level instanceof ServerLevel serverLevel) {
             Packet<?> packet = getUpdatePacket();
-            for (ServerPlayer player : serverLevel.getChunkSource().chunkMap.getPlayers(new ChunkPos(getBlockPos()), false)) {
+            for (ServerPlayer player : serverLevel.getChunkSource().chunkMap.getPlayers(ChunkPos.containing(getBlockPos()), false)) {
                 player.connection.send(packet);
             }
 

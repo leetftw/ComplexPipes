@@ -226,10 +226,10 @@ public class BuiltinPipeTypes {
             BuiltinPipeCards.ENERGY_UPGRADE
     );
 
-    private static final Identifier BASE_FRAME_TEXTURE = Identifier.fromNamespaceAndPath(MODID, "basic_pipe_frame");
-    private static final Identifier ENHANCED_FRAME_TEXTURE = Identifier.fromNamespaceAndPath(MODID, "enhanced_pipe_frame");
-    private static final Identifier ADVANCED_FRAME_TEXTURE = Identifier.fromNamespaceAndPath(MODID, "advanced_pipe_frame");
-    private static final Identifier EXTREME_FRAME_TEXTURE = Identifier.fromNamespaceAndPath(MODID, "extreme_pipe_frame");
+    public static final Identifier BASE_FRAME_TEXTURE = Identifier.fromNamespaceAndPath(MODID, "basic_pipe_frame");
+    public static final Identifier ENHANCED_FRAME_TEXTURE = Identifier.fromNamespaceAndPath(MODID, "enhanced_pipe_frame");
+    public static final Identifier ADVANCED_FRAME_TEXTURE = Identifier.fromNamespaceAndPath(MODID, "advanced_pipe_frame");
+    public static final Identifier EXTREME_FRAME_TEXTURE = Identifier.fromNamespaceAndPath(MODID, "extreme_pipe_frame");
 
     private static final Predicate<PipeCard> BASIC_PIPE_SUPPORTS = PipeCard::isFilter;
     private static final Predicate<PipeCard> ITEM_PIPE_SUPPORTS = pipeCard -> ITEM_PIPE_SUPPORTED_CARDS.contains(pipeCard.getType()) || pipeCard instanceof RouterPipeCard;

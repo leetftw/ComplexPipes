@@ -1,28 +1,35 @@
 package com.leetftw.complexpipes.client.render.block_entity;
 
 import com.leetftw.complexpipes.client.ClientConfig;
-import com.leetftw.complexpipes.common.blocks.PipeBlockEntity;
+import com.leetftw.complexpipes.common.block_entities.PipeBlockEntity;
 import com.leetftw.complexpipes.common.pipe.network.ClientPipeConnection;
 import com.leetftw.complexpipes.common.pipe.network.PipeConnectionMode;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MaterialMapper;
+import net.minecraft.client.renderer.SpriteMapper;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.block.model.BlockStateModel;
+import net.minecraft.client.renderer.block.BlockModelRenderState;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModelDispatcher;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.client.renderer.state.CameraRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.model.Material;
+import net.minecraft.client.resources.model.sprite.SpriteId;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity, PipeRenderState> {
     public PipeRenderer(BlockEntityRendererProvider.Context context) { }
@@ -43,14 +50,19 @@ public class PipeRenderer implements BlockEntityRenderer<PipeBlockEntity, PipeRe
         int overlay = OverlayTexture.NO_OVERLAY;
 
         if (ClientConfig.RENDER_PIPE_BE.get()) {
-            BlockStateModel model = Minecraft.getInstance().getBlockRenderer().getBlockModel(renderState.blockState);
-            nodeCollector.submitBlockModel(poseStack, RenderTypes.entityCutout(TextureAtlas.LOCATION_BLOCKS), model, 0, 0, 0, renderState.lightCoords, OverlayTexture.NO_OVERLAY, 0);
+            BlockStateModel model = Minecraft.getInstance().getModelManager().getBlockStateModelSet().get(renderState.pipeBlockEntity.getBlockState());
+            List<BlockStateModelPart> parts = new ArrayList<>();
+            model.collectParts(RandomSource.create(), parts);
+
+            BlockModelRenderState rs = new BlockModelRenderState();
+
+            nodeCollector.submitBlockModel(poseStack, RenderTypes.entityCutout(TextureAtlas.LOCATION_BLOCKS), parts, new int[] { 0, 0, 0 }, renderState.lightCoords, OverlayTexture.NO_OVERLAY, 0);
         }
 
         poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);
 
-        Material pipeMaterial = new MaterialMapper(TextureAtlas.LOCATION_BLOCKS, "block").apply(renderState.pipeBlockEntity.TYPE.getFrameTexturePath());
+        SpriteId pipeMaterial = new SpriteMapper(TextureAtlas.LOCATION_BLOCKS, "block").apply(renderState.pipeBlockEntity.TYPE.getFrameTexturePath());
         TextureAtlasSprite sprite = Minecraft.getInstance().getAtlasManager().get(pipeMaterial);
 
         float nodeRadius = 8f / 16f / 2f;

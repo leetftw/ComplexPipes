@@ -1,9 +1,8 @@
 package com.leetftw.complexpipes.common.pipe.types;
 
 import com.leetftw.complexpipes.common.blocks.PipeBlock;
-import com.leetftw.complexpipes.common.blocks.PipeBlockEntity;
+import com.leetftw.complexpipes.common.block_entities.PipeBlockEntity;
 import com.leetftw.complexpipes.common.cards.PipeCard;
-import com.leetftw.complexpipes.common.cards.PipeCardType;
 import com.leetftw.complexpipes.common.util.PipeHandlerWrapper;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
